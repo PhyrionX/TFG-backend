@@ -1,0 +1,7 @@
+{
+  "name": "OPhoras",
+  "description": "Sistema para llevar un control de las horas empleadas al día",
+  "repository": "https://github.com/PhyrionX/OPhoras.git",
+  "keywords": ["node", "express", "static"],
+  "image": "heroku/nodejs"
+}
