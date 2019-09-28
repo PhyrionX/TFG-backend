@@ -4,5 +4,5 @@ module.exports = {
         test:"mongodb://localhost:27017/stw"
     },
     TOKEN_SECRET: process.env.TOKEN_SECRET || "clavePrivadaToOp",
-    port: "8080",
+    port: "8081",
 }

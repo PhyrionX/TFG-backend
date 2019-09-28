@@ -6,8 +6,7 @@
   "start": "main.js",
   "scripts": {
     "start": "node main.js",
-    "test": "node_modules/.bin/mocha",
-    "postinstall": "./node_modules/bower/bin/bower install"
+    "test": "node_modules/.bin/mocha"
   },
   "dependencies": {
     "adf.ly": "^1.1.0",

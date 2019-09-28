@@ -1,4 +1,4 @@
-çmodule.exports = {
+module.exports = {
     uri_request_token: "https://api.twitter.com/oauth/request_token",
     uri_access_token: "https://api.twitter.com/oauth/access_token",
     consumer_key:  "EObdyi9bcvtMFcYD4a6chuxiB" || "pYGaMnp0f5HroAUdxNyZhhZLT",

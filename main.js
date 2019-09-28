@@ -45,9 +45,9 @@ app.use(function(err, req, res, next) {
 });
 
 //si no existe el admin lo creamos
-init.createAdmin();
-init.insertSomeUsers();
-jobs.programmedTweets();
+// init.createAdmin();
+// init.insertSomeUsers();
+// jobs.programmedTweets();
 
 //Configuramos express
 app.use(bodyParser.json());
