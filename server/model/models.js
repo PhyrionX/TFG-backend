@@ -98,7 +98,24 @@ var userSchema = new Schema({
   b_borrado: {
     type: Boolean,
     default: false
-  }
+  },
+  cuentas: [{
+    id_twitter: {
+      type: String
+    },
+    cuenta: {
+      type: String
+    },
+    access_token: {
+      type: String
+    },
+    access_token_secret: {
+      type: String
+    },
+    info: {
+      type: String
+    }
+  }]
 });
 
 // Export the User model

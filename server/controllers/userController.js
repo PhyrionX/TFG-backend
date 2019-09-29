@@ -35,11 +35,13 @@ module.exports = {
         });
         else {
           if (_user.password == pass) {
+            console.log(_user);
+            
             return res.status(200).send({
               error: 0,
               token: service.createToken(_user),
-              email: req.body.email,
-              username: req.body.username,
+              email: _user.email,
+              username: _user.username,
             });
           } else {
 
