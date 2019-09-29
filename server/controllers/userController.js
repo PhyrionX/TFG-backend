@@ -35,12 +35,11 @@ module.exports = {
         });
         else {
           if (_user.password == pass) {
-            _user.stats.ultimo_acceso = Date.now();
             return res.status(200).send({
               error: 0,
               token: service.createToken(_user),
-              user: req.body.email,
-              admin: _user.admin
+              email: req.body.email,
+              username: req.body.username,
             });
           } else {
 
@@ -89,7 +88,8 @@ module.exports = {
           else return res.status(200).send({
             error: 0,
             token: service.createToken(_user),
-            user: req.body.email,
+            email: req.body.email,
+            username: req.body.username,
             admin: _user.admin
           });
         });
