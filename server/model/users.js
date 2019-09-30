@@ -50,8 +50,8 @@ module.exports = {
     },
     addAccount: function(_email,_account,callback){
         var intro = false;
-        this.getUser(_email,function(err,user){
-            //console.log(user.cuentas[0]);
+        this.getUser("bb", function(err,user){
+            console.log(user);
             for (var i = 0; i < user.cuentas.length; i++) {
                 if (user.cuentas[i].id_twitter == _account.id_twitter) {
                     intro = true;

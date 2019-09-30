@@ -58,7 +58,7 @@ module.exports = {
                     cuentaTwitter.cuenta = results.screen_name;
                     cuentaTwitter.access_token = oauth_access_token;
                     cuentaTwitter.access_token_secret = oauth_access_token_secret;
-                    cuentaTwitter.info = req.session.info;
+                    cuentaTwitter.info = req.sessilon.info;
 
                     user.addAccount(req.session.user_id, cuentaTwitter, function (err, user) {
                         console.log(user);
@@ -67,6 +67,18 @@ module.exports = {
                     res.redirect('/'); // You might actually want to redirect!
                 }
             });
+    },
+    testing: function(req, res, next) {
+        oauth.get(twitter.acciones.users + "?q=realmadrid", req.params.accessToken, req.params.accessTokenSecret, function (e, response, result) {
+           console.log(e, JSON.parse(response)[0]);
+           return res.status(200).json({ result: JSON.parse(response)});
+        });
+    },
+    testing2: function(req, res, next) {
+        oauth.get(twitter.acciones.user_timeline + "?screen_name=realmadrid&exclude_replies=false", req.params.accessToken, req.params.accessTokenSecret, function (e, response, result) {
+           console.log(e, JSON.parse(response));
+           return res.status(200).json({ result: JSON.parse(response)});
+        });
     },
     getTimelinesHashtag: function(req,res,next){
         async.parallel({

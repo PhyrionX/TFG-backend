@@ -66,6 +66,8 @@ module.exports = {
 
   //TODO: hay que genrar el pass automaticamente, no se coge del form
   register: function (req, res, next) {
+    console.log();
+    
     var _user = {
       email: req.body.email,
       password: crypto.createHash('sha1').update(req.body.password).digest('base64'),
