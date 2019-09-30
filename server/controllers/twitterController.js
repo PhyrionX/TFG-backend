@@ -58,13 +58,13 @@ module.exports = {
                     cuentaTwitter.cuenta = results.screen_name;
                     cuentaTwitter.access_token = oauth_access_token;
                     cuentaTwitter.access_token_secret = oauth_access_token_secret;
-                    cuentaTwitter.info = req.sessilon.info;
+                    cuentaTwitter.info = req.session.info;
 
                     user.addAccount(req.session.user_id, cuentaTwitter, function (err, user) {
                         console.log(user);
                     })
 
-                    res.redirect('/'); // You might actually want to redirect!
+                    res.redirect('http://localhost:8080/#/configuration'); // You might actually want to redirect!
                 }
             });
     },
