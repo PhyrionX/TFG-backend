@@ -2,6 +2,8 @@ var crypto = require('crypto');
 var passwoid = require('passwoid');
 var service = require('./service');
 var user = require('../model/users');
+var jwt = require('jwt-simple');
+var config = require('../config/config');
 
 module.exports = {
   comparePassword: function (req, res, next) {
@@ -102,7 +104,10 @@ module.exports = {
   },
 
   getUser: function (req, res, next) {
-    user.getUser(req.params.id, function (err, data) {
+    var token = req.headers.authorization;
+    console.log(jwt.decode(token, config.TOKEN_SECRET));
+    
+    user.getUser(jwt.decode(token, config.TOKEN_SECRET).sub, function (err, data) {
       if (err) return res.status(500).send({
         error: 3,
         mensaje: 'Server Error'

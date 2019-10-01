@@ -37,7 +37,7 @@ module.exports = {
                 } else {
                     req.session.info = req.body.informacion;
                 }
-                req.session.user_id = req.body.user;
+                req.session.user_id = 'ee' ;
                 req.session.oauthRequestToken = oauth_token;
                 req.session.oauthRequestTokenSecret = oauth_token_secret;
                 res.redirect('https://twitter.com/oauth/authenticate?oauth_token=' + oauth_token)
