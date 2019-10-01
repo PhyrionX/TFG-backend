@@ -3,6 +3,8 @@ var crypto = require('crypto'),
     async = require('async'),
     twitter = require('../config/twitterConnection'),
     user = require('../model/users');
+var jwt = require('jwt-simple');
+var config = require('../config/config');
 
 var OAuth = require('oauth').OAuth,
     oauth = new OAuth(
@@ -26,7 +28,7 @@ module.exports = {
             });
     },
 
-    getOauth: function(req, res){
+    getOauth: function(req, res) {        
         oauth.getOAuthRequestToken(function (error, oauth_token, oauth_token_secret, results) {
             if (error) {
                 console.log(error);
@@ -36,8 +38,9 @@ module.exports = {
                     req.session.info = "Sin información"
                 } else {
                     req.session.info = req.body.informacion;
-                }
-                req.session.user_id = 'ee' ;
+                };
+                
+                req.session.user_id = req.body.user ;
                 req.session.oauthRequestToken = oauth_token;
                 req.session.oauthRequestTokenSecret = oauth_token_secret;
                 res.redirect('https://twitter.com/oauth/authenticate?oauth_token=' + oauth_token)
@@ -45,6 +48,8 @@ module.exports = {
         });
     },
     callbackOauth:function(req, res, next) {
+        const session = req.session;
+        
         oauth.getOAuthAccessToken(req.session.oauthRequestToken, req.session.oauthRequestTokenSecret, req.query.oauth_verifier,
             function(error, oauth_access_token, oauth_access_token_secret, results) {
                 if (error) {
@@ -59,7 +64,9 @@ module.exports = {
                     cuentaTwitter.access_token = oauth_access_token;
                     cuentaTwitter.access_token_secret = oauth_access_token_secret;
                     cuentaTwitter.info = req.session.info;
-
+                    
+                    console.log(req.session,session);
+                    
                     user.addAccount(req.session.user_id, cuentaTwitter, function (err, user) {
                         console.log(user);
                     })
@@ -68,17 +75,31 @@ module.exports = {
                 }
             });
     },
-    testing: function(req, res, next) {
-        oauth.get(twitter.acciones.users + "?q=realmadrid", req.params.accessToken, req.params.accessTokenSecret, function (e, response, result) {
-           console.log(e, JSON.parse(response)[0]);
-           return res.status(200).json({ result: JSON.parse(response)});
+    getSuggestions: function(req, res, next) {
+        var token = req.headers.authorization;
+    
+        user.getUser(jwt.decode(token, config.TOKEN_SECRET).sub, function (err, data) {
+            if (err) return res.status(400);
+
+            console.log(data);
+            
+
+            oauth.get(twitter.acciones.users + "?q=" + req.params.search, data.cuentas[0].access_token, data.cuentas[0].access_token_secret, function (e, response, result) {
+            console.log(e, JSON.parse(response)[0]);
+            return res.status(200).json({ result: JSON.parse(response)});
+            });
         });
     },
-    testing2: function(req, res, next) {
-        oauth.get(twitter.acciones.user_timeline + "?screen_name=realmadrid&exclude_replies=false", req.params.accessToken, req.params.accessTokenSecret, function (e, response, result) {
-           console.log(e, JSON.parse(response));
-           return res.status(200).json({ result: JSON.parse(response)});
-        });
+    friend_timeline: function(req, res, next) {
+        var token = req.headers.authorization;
+        user.getUser(jwt.decode(token, config.TOKEN_SECRET).sub, function (err, data) {
+            if (err) return res.status(400);
+
+            oauth.get(twitter.acciones.user_timeline + "?screen_name=" + req.params.search + "&exclude_replies=false", data.cuentas[0].access_token, data.cuentas[0].access_token_secret, function (e, response, result) {
+            console.log(e, JSON.parse(response));
+            return res.status(200).json({ result: JSON.parse(response)});
+            });
+        })
     },
     getTimelinesHashtag: function(req,res,next){
         async.parallel({

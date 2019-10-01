@@ -84,11 +84,11 @@ app.delete("/api/hashtag/:id/:hashtag",middleware.ensureAuthenticated, twitterCo
 app.get("/auth/prueba", twitterController.prueba);
 
 /** TwitterApi **/
-app.get("/auth/twitter", twitterController.getOauth);
+app.post("/auth/twitter", twitterController.getOauth);
 app.get("/auth/twitter/callback", twitterController.callbackOauth);
 app.get("/api/twitter/timelines/:accessToken/:accessTokenSecret/:twitter", middleware.ensureAuthenticated, twitterController.getTimelines);
-app.get("/api/twitter/testing/:accessToken/:accessTokenSecret", middleware.ensureAuthenticated, twitterController.testing);
-app.get("/api/twitter/testing2/:accessToken/:accessTokenSecret", middleware.ensureAuthenticated, twitterController.testing2);
+app.get("/api/twitter/suggestions/:search", middleware.ensureAuthenticated, twitterController.getSuggestions);
+app.get("/api/twitter/friend_timeline/:search", middleware.ensureAuthenticated, twitterController.friend_timeline);
 // app.get("/api/twitter/testing3/:accessToken/:accessTokenSecret", middleware.ensureAuthenticated, twitterController.testing3);
 app.get("/api/twitter/timelinesHashtag/:accessToken/:accessTokenSecret/:hashtag", middleware.ensureAuthenticated, twitterController.getTimelinesHashtag);
 

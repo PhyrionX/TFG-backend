@@ -105,7 +105,6 @@ module.exports = {
 
   getUser: function (req, res, next) {
     var token = req.headers.authorization;
-    console.log(jwt.decode(token, config.TOKEN_SECRET));
     
     user.getUser(jwt.decode(token, config.TOKEN_SECRET).sub, function (err, data) {
       if (err) return res.status(500).send({
