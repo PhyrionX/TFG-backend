@@ -101,6 +101,17 @@ module.exports = {
             });
         })
     },
+    testing: function(req, res, next) {
+        var token = req.headers.authorization;
+        user.getUser(jwt.decode(token, config.TOKEN_SECRET).sub, function (err, data) {
+            if (err) return res.status(400);
+
+            oauth.get(twitter.acciones.search, data.cuentas[0].access_token, data.cuentas[0].access_token_secret, function (e, response, result) {
+            console.log(e, JSON.parse(response));
+            return res.status(200).json({ result: JSON.parse(response)});
+            });
+        })
+    },
     getTimelinesHashtag: function(req,res,next){
         async.parallel({
             one: function (callback) {
