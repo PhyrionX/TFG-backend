@@ -83,7 +83,6 @@ module.exports = {
 
 
       oauth.get(twitter.acciones.users + "?q=" + req.params.search, data.cuentas[0].access_token, data.cuentas[0].access_token_secret, function (e, response, result) {
-        console.log(e, JSON.parse(response)[0]);
         return res.status(200).json({
           result: JSON.parse(response)
         });
@@ -117,7 +116,7 @@ module.exports = {
       .then(([timeline, user]) => {  
         var userJson = JSON.parse(user);
         
-        analytics.add({
+        return analytics.add({
           id: userJson.id,
           id_str: userJson.id_str,
           user_searcher: jwt.decode(token, config.TOKEN_SECRET).sub,
@@ -134,10 +133,9 @@ module.exports = {
           statuses_count: userJson.statuses_count,
           profile_background_image_url: userJson.profile_background_image_url,
           profile_image_url: userJson.profile_image_url
-        }).then((response) => console.log(response))
-        
-        return res.status(200).json({user: JSON.parse(user), timeline: JSON.parse(timeline)});       
+        })
       })
+      .then((response) => res.status(200).json(response))
       .catch((err) => console.log(err))
     })
   },
