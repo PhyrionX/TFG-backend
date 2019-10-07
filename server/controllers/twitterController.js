@@ -141,6 +141,11 @@ module.exports = {
       .catch((err) => console.log(err))
     })
   },
+  getHistory: function(req, res, next) {
+    analytics.getHistoy()
+      .then((data) => res.status(200).json(data))
+      .then((err) => res.status(400).json({error: err}))
+  },
   testing: function (req, res, next) {
     var token = req.headers.authorization;
     user.getUser(jwt.decode(token, config.TOKEN_SECRET).sub, function (err, data) {
