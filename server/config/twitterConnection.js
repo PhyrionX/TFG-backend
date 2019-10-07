@@ -15,6 +15,7 @@ module.exports = {
         tweet: "https://api.twitter.com/1.1/statuses/update.json",
         hashtags: "https://api.twitter.com/1.1/search/tweets.json",
         users: "https://api.twitter.com/1.1/users/search.json",
+        users_show: 'https://api.twitter.com/1.1/users/show.json',
         search: "https://api.twitter.com/1.1/search/tweets.json?q=to%3Arealmadrid&result_type=mixed&count=100&since_id=1179768934951727104"
     }
 }

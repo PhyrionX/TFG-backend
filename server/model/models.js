@@ -118,5 +118,75 @@ var userSchema = new Schema({
   }]
 });
 
+var analyticsSchema = new Schema({
+  id: {
+    type: Number,
+    require: true,
+  },
+  id_str: {
+    type: String,
+    require: true,
+  },
+  user_searcher: {
+    type: String,
+    required: true
+  },
+  date_of_search: {
+    type: Date,
+    required: true,
+    default: Date.now
+  },
+  type: {
+    type: String,
+    required: true
+  },
+  name: {
+    type: String,
+    required: true
+  },
+  screen_name: {
+    type: String,
+    required: true
+  },
+  location: {
+    type: String,
+    required: true
+  },
+  description: {
+    type: String,
+    required: true
+  },
+  url: {
+    type: String
+  },
+  followers_count: {
+    type: Number,
+    require: true,
+  },
+  friends_count: {
+    type: Number,
+    require: true,
+  },
+  listed_count: {
+    type: Number,
+    require: true,
+  },
+  favourites_count: {
+    type: Number,
+    require: true,
+  },
+  statuses_count: {
+    type: Number,
+    required: true
+  },
+  profile_background_image_url: {
+    type: String
+  },
+  profile_image_url: {
+    type: String
+  }
+})
+
 // Export the User model
 exports.User = mongoose.model('User', userSchema);
+exports.Analytics = mongoose.model('Analytics', analyticsSchema);
