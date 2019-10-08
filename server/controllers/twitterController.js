@@ -18,6 +18,28 @@ var OAuth = require('oauth').OAuth,
     twitter.signature
   );
 
+async function getStatuses(searchParameter, accessToken, accessTokenSecret) {
+  let statuses = [];
+  let result = []
+  console.log('calling');
+  while (result.length == 0 || result.length == 200) {
+    result = await getStat(searchParameter, accessToken, accessTokenSecret);
+    statuses = [...statuses, ...result]
+    console.log(statuses[statuses.length - 1]);
+  }
+}
+
+function getStat(searchParameter, accessToken, accessTokenSecret) {
+  return new Promise((resolve, reject) =>
+    oauth.get(twitter.acciones.user_timeline + "?screen_name=" + "phyrion" + "&count=200",
+      accessToken, accessTokenSecret,
+      function (err, response, result) {        
+        if (err) reject(err)
+        resolve(JSON.parse(response));
+      }
+    )
+  )
+}
 
 module.exports = {
   prueba: function (req, res) {
@@ -94,15 +116,7 @@ module.exports = {
     user.getUser(jwt.decode(token, config.TOKEN_SECRET).sub, function (err, data) {
       if (err) return res.status(400);
       Promise.all([
-        new Promise((resolve, reject) =>
-          oauth.get(twitter.acciones.user_timeline + "?screen_name=" + req.params.search + "&exclude_replies=false",
-            data.cuentas[0].access_token, data.cuentas[0].access_token_secret,
-            function (err, response, result) {
-              if (err) reject(err)
-              resolve(response);
-            }
-          )
-        ),
+        getStatuses(req.params.search),
         new Promise((resolve, reject) =>
           oauth.get(twitter.acciones.users_show + "?screen_name=" + req.params.search,
             data.cuentas[0].access_token, data.cuentas[0].access_token_secret,
@@ -113,7 +127,7 @@ module.exports = {
           )
         )
       ])
-      .then(([timeline, user]) => {  
+      .then(([timeline, user]) => {          
         var userJson = JSON.parse(user);
         
         return analytics.add({
