@@ -37,6 +37,11 @@ async function getStatuses(searchParameter, accessToken, accessTokenSecret) {
     // console.log(result.filter((stat) => moment(new Date(stat.created_at)) >= dateSevenDays).length)
   } while (result.length == 200);
 
+  getReplys(searchParameter, accessToken, accessTokenSecret, statuses[statuses.length - 1].id)
+    .then((response) => {
+      console.log(response.statuses.pop())
+    })
+    .catch((err) => console.log(err))
   // statuses.map((status) => {
   //   getReplys(searchParameter, accessToken, accessTokenSecret, status.id)
   //     .then((response) => {
