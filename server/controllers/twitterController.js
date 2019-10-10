@@ -3,6 +3,7 @@ var crypto = require('crypto'),
   async = require('async'),
     twitter = require('../config/twitterConnection'),
     user = require('../model/users'),
+    moment = require('moment'),
     analytics = require('../model/analytics');
 var jwt = require('jwt-simple');
 var config = require('../config/config');
@@ -22,17 +23,39 @@ async function getStatuses(searchParameter, accessToken, accessTokenSecret) {
   let statuses = [];
   let result = []
   let maxId = 0;
+  let dateSevenDays = moment(Date.now() - 7 * 24 * 3600 * 1000); 
   
   do {
-    result = await getStat(searchParameter, accessToken, accessTokenSecret, maxId);
+    result = (await getStat(searchParameter, accessToken, accessTokenSecret, maxId)).filter((stat) => moment(new Date(stat.created_at)) >= dateSevenDays);
     
     statuses = [...statuses, ...result]
     
     if (statuses.length > 0) {
       maxId = statuses[statuses.length - 1].id;
     }
-    console.log(statuses.length)
+    
+    // console.log(result.filter((stat) => moment(new Date(stat.created_at)) >= dateSevenDays).length)
   } while (result.length == 200);
+
+  // statuses.map((status) => {
+  //   getReplys(searchParameter, accessToken, accessTokenSecret, status.id)
+  //     .then((response) => {
+  //       console.log(response)
+  //     })
+  //     .catch((err) => console.log(err));
+  //    })
+}
+
+function getReplys(searchParameter, accessToken, accessTokenSecret, sinceId) {
+  return new Promise((resolve, reject) =>
+    oauth.get(`${ twitter.acciones.search }?q=to%3A${ searchParameter }&result_type=mixed&count=100&since_id=${ sinceId }`,
+      accessToken, accessTokenSecret,
+      function (err, response, result) {           
+        if (err) reject(err)
+        resolve(JSON.parse(response));
+      }
+    )
+  )
 }
 
 function getStat(searchParameter, accessToken, accessTokenSecret, maxId) {
