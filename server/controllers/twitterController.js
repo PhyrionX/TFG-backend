@@ -21,17 +21,29 @@ var OAuth = require('oauth').OAuth,
 async function getStatuses(searchParameter, accessToken, accessTokenSecret) {
   let statuses = [];
   let result = []
-  console.log('calling');
-  while (result.length == 0 || result.length == 200) {
-    result = await getStat(searchParameter, accessToken, accessTokenSecret);
+  let maxId = 0;
+  
+  do {
+    result = await getStat(searchParameter, accessToken, accessTokenSecret, maxId);
+    
     statuses = [...statuses, ...result]
-    console.log(statuses[statuses.length - 1]);
-  }
+    
+    if (statuses.length > 0) {
+      maxId = statuses[statuses.length - 1].id;
+    }
+    console.log(statuses.length)
+  } while (result.length == 200);
 }
 
-function getStat(searchParameter, accessToken, accessTokenSecret) {
+function getStat(searchParameter, accessToken, accessTokenSecret, maxId) {
+  let maxIdString = '';
+
+  if (maxId != 0) {
+    maxIdString = `&max_id=${ maxId }`
+  }
+
   return new Promise((resolve, reject) =>
-    oauth.get(twitter.acciones.user_timeline + "?screen_name=" + "phyrion" + "&count=200",
+    oauth.get(`${ twitter.acciones.user_timeline }?screen_name=${ searchParameter }&count=200${ maxIdString }`,
       accessToken, accessTokenSecret,
       function (err, response, result) {        
         if (err) reject(err)
