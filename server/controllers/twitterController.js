@@ -26,40 +26,59 @@ async function getStatuses(searchParameter, accessToken, accessTokenSecret) {
   let dateSevenDays = moment(Date.now() - 7 * 24 * 3600 * 1000); 
   
   do {
-    result = (await getStat(searchParameter, accessToken, accessTokenSecret, maxId)).filter((stat) => moment(new Date(stat.created_at)) >= dateSevenDays);
+    result = (await getStat(searchParameter, accessToken, accessTokenSecret, maxId));
     
     statuses = [...statuses, ...result]
     
     if (statuses.length > 0) {
       maxId = statuses[statuses.length - 1].id;
     }
-
-    // console.log(result.filter((stat) => moment(new Date(stat.created_at)) >= dateSevenDays).length)
   } while (result.length == 200);
-  
+    
   if (statuses.length > 0) {
-    getReplys(searchParameter, accessToken, accessTokenSecret, statuses[statuses.length - 1].id)
-      .then((response) => {
-        console.log(response.statuses.pop())
+      let lastId = null;
+      
+      statuses
+      .filter((stat) => moment(new Date(stat.created_at)) >= dateSevenDays)
+      .map((status) => {
+        getReplys(searchParameter, accessToken, accessTokenSecret, status.id, lastId)
+          .then((response) => {
+            // console.log(response);
+            
+            console.log(response.map((res) => ({
+              text: res.text,
+              created_at: res.created_at,
+              in_reply_to_status_id: res.in_reply_to_status_id,
+              in_reply_to_status_id_str: res.in_reply_to_status_id_str,
+              in_reply_to_user_id: res.in_reply_to_user_id,
+              in_reply_to_user_id_str: res.in_reply_to_user_id_str,
+              in_reply_to_screen_name: res.in_reply_to_screen_name,
+            })))
+            console.log(status.id, response.length)
+            // lastId = status.id; 
+          })
+          .catch((err) => console.log(err))
+          
+        lastId = status.id; 
       })
-      .catch((err) => console.log(err))
     }
-  // statuses.map((status) => {
-  //   getReplys(searchParameter, accessToken, accessTokenSecret, status.id)
-  //     .then((response) => {
-  //       console.log(response)
-  //     })
-  //     .catch((err) => console.log(err));
-  //    })
 }
 
-function getReplys(searchParameter, accessToken, accessTokenSecret, sinceId) {
+function getReplys(searchParameter, accessToken, accessTokenSecret, sinceId, maxId) {
+  let maxIdString = '';
+  
+  if (maxId) {
+    maxIdString = `&max_id=${ maxId }`
+  }
+
+  console.log(`${ twitter.acciones.search }?q=to%3A${ searchParameter }&result_type=recent&count=100&since_id=${ sinceId }${ maxIdString }`);
+  
   return new Promise((resolve, reject) =>
-    oauth.get(`${ twitter.acciones.search }?q=to%3A${ searchParameter }&result_type=mixed&count=100&since_id=${ sinceId }`,
+    oauth.get(`${ twitter.acciones.search }?q=to%3A${ searchParameter }&result_type=recent&count=100&since_id=${ sinceId }${ maxIdString }`,
       accessToken, accessTokenSecret,
-      function (err, response, result) {           
+      function (err, response) {           
         if (err) reject(err)
-        resolve(JSON.parse(response));
+        resolve(JSON.parse(response).statuses);
       }
     )
   )
@@ -75,7 +94,7 @@ function getStat(searchParameter, accessToken, accessTokenSecret, maxId) {
   return new Promise((resolve, reject) =>
     oauth.get(`${ twitter.acciones.user_timeline }?screen_name=${ searchParameter }&count=200${ maxIdString }`,
       accessToken, accessTokenSecret,
-      function (err, response, result) {        
+      function (err, response) {        
         if (err) reject(err)
         resolve(JSON.parse(response));
       }
