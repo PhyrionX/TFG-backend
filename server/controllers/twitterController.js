@@ -33,15 +33,17 @@ async function getStatuses(searchParameter, accessToken, accessTokenSecret) {
     if (statuses.length > 0) {
       maxId = statuses[statuses.length - 1].id;
     }
-    
+
     // console.log(result.filter((stat) => moment(new Date(stat.created_at)) >= dateSevenDays).length)
   } while (result.length == 200);
-
-  getReplys(searchParameter, accessToken, accessTokenSecret, statuses[statuses.length - 1].id)
-    .then((response) => {
-      console.log(response.statuses.pop())
-    })
-    .catch((err) => console.log(err))
+  
+  if (statuses.length > 0) {
+    getReplys(searchParameter, accessToken, accessTokenSecret, statuses[statuses.length - 1].id)
+      .then((response) => {
+        console.log(response.statuses.pop())
+      })
+      .catch((err) => console.log(err))
+    }
   // statuses.map((status) => {
   //   getReplys(searchParameter, accessToken, accessTokenSecret, status.id)
   //     .then((response) => {
