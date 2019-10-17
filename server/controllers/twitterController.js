@@ -24,6 +24,7 @@ async function getStatuses(searchParameter, accessToken, accessTokenSecret) {
   let result = []
   let maxId = 0;
   let dateSevenDays = moment(Date.now() - 7 * 24 * 3600 * 1000);
+  let replaysForTweet = {};
 
   do {
     result = (await getStat(searchParameter, accessToken, accessTokenSecret, maxId));
@@ -37,39 +38,61 @@ async function getStatuses(searchParameter, accessToken, accessTokenSecret) {
 
   if (statuses.length > 0) {
     let lastId = null,
-      iterator = 0,
-
-      replaysForTweet = {};
+      iterator = 0;
 
 
     const lastDaysStatuses = statuses.filter((stat) => moment(new Date(stat.created_at)) >= dateSevenDays)
     let tweetIds = lastDaysStatuses.map((stat) => stat.id.toString());
 
     while (iterator < lastDaysStatuses.length) {
+      // console.log(replaysForTweet);
+      
       let statusResult = lastDaysStatuses[iterator];
       let partialReplays = await getReplys(searchParameter, accessToken, accessTokenSecret, statusResult.id, lastId);
 
-      let infoPartialReplays = partialReplays.reduce((acc, partialReplay) => {
+      replaysForTweet = partialReplays.reduce((acc, partialReplay) => {
 
-        console.log(partialReplay.in_reply_to_status_id);
-        
-        return  tweetIds.filter(tw => tw === partialReplay.in_reply_to_status_id.toString()) ? ({
-          ...acc,
-          [partialReplay.in_reply_to_status_id]: [{
-            text: partialReplay.text,
-            created_at: partialReplay.created_at,
-            in_reply_to_status_id: partialReplay.in_reply_to_status_id,
-            in_reply_to_status_id_str: partialReplay.in_reply_to_status_id_str,
-            in_reply_to_user_id: partialReplay.in_reply_to_user_id,
-            in_reply_to_user_id_str: partialReplay.in_reply_to_user_id_str,
-            in_reply_to_screen_name: partialReplay.in_reply_to_screen_name
-          }]
-        }) : acc
+        let newAcc;
+        let partialNewAcc; 
 
+        if (tweetIds.filter(tw => tw === partialReplay.in_reply_to_status_id.toString())) {
+          if (acc[partialReplay.in_reply_to_status_id]) {
+            partialNewAcc = [...acc[partialReplay.in_reply_to_status_id], {
+              text: partialReplay.text,
+              created_at: partialReplay.created_at,
+              in_reply_to_status_id: partialReplay.in_reply_to_status_id,
+              in_reply_to_status_id_str: partialReplay.in_reply_to_status_id_str,
+              in_reply_to_user_id: partialReplay.in_reply_to_user_id,
+              in_reply_to_user_id_str: partialReplay.in_reply_to_user_id_str,
+              in_reply_to_screen_name: partialReplay.in_reply_to_screen_name
+            }];
+          } else {
+            partialNewAcc = [{
+              text: partialReplay.text,
+              created_at: partialReplay.created_at,
+              in_reply_to_status_id: partialReplay.in_reply_to_status_id,
+              in_reply_to_status_id_str: partialReplay.in_reply_to_status_id_str,
+              in_reply_to_user_id: partialReplay.in_reply_to_user_id,
+              in_reply_to_user_id_str: partialReplay.in_reply_to_user_id_str,
+              in_reply_to_screen_name: partialReplay.in_reply_to_screen_name
+            }];
+          }
+
+
+          newAcc = {
+            ...acc,
+            [partialReplay.in_reply_to_status_id]: partialNewAcc
+          }
+        } else {
+          newAcc = acc
+        }
+
+        return newAcc;
       }, replaysForTweet);
 
-      console.log(statusResult.id, statusResult.text, infoPartialReplays, tweetIds)
 
+      console.log(replaysForTweet);
+      
       lastId = statusResult.id;
       iterator++;
     }
