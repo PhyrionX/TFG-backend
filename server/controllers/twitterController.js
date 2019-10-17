@@ -23,60 +23,95 @@ async function getStatuses(searchParameter, accessToken, accessTokenSecret) {
   let statuses = [];
   let result = []
   let maxId = 0;
-  let dateSevenDays = moment(Date.now() - 7 * 24 * 3600 * 1000); 
-  
+  let dateSevenDays = moment(Date.now() - 7 * 24 * 3600 * 1000);
+
   do {
     result = (await getStat(searchParameter, accessToken, accessTokenSecret, maxId));
-    
+
     statuses = [...statuses, ...result]
-    
+
     if (statuses.length > 0) {
       maxId = statuses[statuses.length - 1].id;
     }
   } while (result.length == 200);
-    
+
   if (statuses.length > 0) {
-      let lastId = null;
-      
-      statuses
-      .filter((stat) => moment(new Date(stat.created_at)) >= dateSevenDays)
-      .map((status) => {
-        getReplys(searchParameter, accessToken, accessTokenSecret, status.id, lastId)
-          .then((response) => {
-            // console.log(response);
-            
-            console.log(response.map((res) => ({
-              text: res.text,
-              created_at: res.created_at,
-              in_reply_to_status_id: res.in_reply_to_status_id,
-              in_reply_to_status_id_str: res.in_reply_to_status_id_str,
-              in_reply_to_user_id: res.in_reply_to_user_id,
-              in_reply_to_user_id_str: res.in_reply_to_user_id_str,
-              in_reply_to_screen_name: res.in_reply_to_screen_name,
-            })))
-            console.log(status.id, response.length)
-            // lastId = status.id; 
-          })
-          .catch((err) => console.log(err))
-          
-        lastId = status.id; 
-      })
+    let lastId = null,
+      iterator = 0,
+
+      replaysForTweet = {};
+
+
+    const lastDaysStatuses = statuses.filter((stat) => moment(new Date(stat.created_at)) >= dateSevenDays)
+    let tweetIds = lastDaysStatuses.map((stat) => stat.id.toString());
+
+    while (iterator < lastDaysStatuses.length) {
+      let statusResult = lastDaysStatuses[iterator];
+      let partialReplays = await getReplys(searchParameter, accessToken, accessTokenSecret, statusResult.id, lastId);
+
+      let infoPartialReplays = partialReplays.reduce((acc, partialReplay) => {
+
+        console.log(partialReplay.in_reply_to_status_id);
+        
+        return  tweetIds.filter(tw => tw === partialReplay.in_reply_to_status_id.toString()) ? ({
+          ...acc,
+          [partialReplay.in_reply_to_status_id]: [{
+            text: partialReplay.text,
+            created_at: partialReplay.created_at,
+            in_reply_to_status_id: partialReplay.in_reply_to_status_id,
+            in_reply_to_status_id_str: partialReplay.in_reply_to_status_id_str,
+            in_reply_to_user_id: partialReplay.in_reply_to_user_id,
+            in_reply_to_user_id_str: partialReplay.in_reply_to_user_id_str,
+            in_reply_to_screen_name: partialReplay.in_reply_to_screen_name
+          }]
+        }) : acc
+
+      }, replaysForTweet);
+
+      console.log(statusResult.id, statusResult.text, infoPartialReplays, tweetIds)
+
+      lastId = statusResult.id;
+      iterator++;
     }
+    // statuses
+    // .filter((stat) => moment(new Date(stat.created_at)) >= dateSevenDays)
+    // .map((status) => {
+    //   getReplys(searchParameter, accessToken, accessTokenSecret, status.id, lastId)
+    //     .then((response) => {
+    //       // console.log(response);
+
+    //       console.log(response.map((res) => ({
+    //         text: res.text,
+    //         created_at: res.created_at,
+    //         in_reply_to_status_id: res.in_reply_to_status_id,
+    //         in_reply_to_status_id_str: res.in_reply_to_status_id_str,
+    //         in_reply_to_user_id: res.in_reply_to_user_id,
+    //         in_reply_to_user_id_str: res.in_reply_to_user_id_str,
+    //         in_reply_to_screen_name: res.in_reply_to_screen_name,
+    //       })).filter((fil) => status.id === fil.in_reply_to_status_id))
+    //       console.log(status.id, status.text, response.length)
+    //       // lastId = status.id; 
+    //     })
+    //     .catch((err) => console.log(err))
+
+    //   lastId = status.id; 
+    // })
+  }
 }
 
 function getReplys(searchParameter, accessToken, accessTokenSecret, sinceId, maxId) {
   let maxIdString = '';
-  
+
   if (maxId) {
     maxIdString = `&max_id=${ maxId }`
   }
 
   console.log(`${ twitter.acciones.search }?q=to%3A${ searchParameter }&result_type=recent&count=100&since_id=${ sinceId }${ maxIdString }`);
-  
+
   return new Promise((resolve, reject) =>
     oauth.get(`${ twitter.acciones.search }?q=to%3A${ searchParameter }&result_type=recent&count=100&since_id=${ sinceId }${ maxIdString }`,
       accessToken, accessTokenSecret,
-      function (err, response) {           
+      function (err, response) {
         if (err) reject(err)
         resolve(JSON.parse(response).statuses);
       }
@@ -94,7 +129,7 @@ function getStat(searchParameter, accessToken, accessTokenSecret, maxId) {
   return new Promise((resolve, reject) =>
     oauth.get(`${ twitter.acciones.user_timeline }?screen_name=${ searchParameter }&count=200${ maxIdString }`,
       accessToken, accessTokenSecret,
-      function (err, response) {        
+      function (err, response) {
         if (err) reject(err)
         resolve(JSON.parse(response));
       }
@@ -177,47 +212,49 @@ module.exports = {
     user.getUser(jwt.decode(token, config.TOKEN_SECRET).sub, function (err, data) {
       if (err) return res.status(400);
       Promise.all([
-        getStatuses(req.params.search),
-        new Promise((resolve, reject) =>
-          oauth.get(twitter.acciones.users_show + "?screen_name=" + req.params.search,
-            data.cuentas[0].access_token, data.cuentas[0].access_token_secret,
-            function (err, response, result) {
-              if (err) reject(err)
-              resolve(response);
-            }
+          getStatuses(req.params.search),
+          new Promise((resolve, reject) =>
+            oauth.get(twitter.acciones.users_show + "?screen_name=" + req.params.search,
+              data.cuentas[0].access_token, data.cuentas[0].access_token_secret,
+              function (err, response, result) {
+                if (err) reject(err)
+                resolve(response);
+              }
+            )
           )
-        )
-      ])
-      .then(([timeline, user]) => {          
-        var userJson = JSON.parse(user);
-        
-        return analytics.add({
-          id: userJson.id,
-          id_str: userJson.id_str,
-          user_searcher: jwt.decode(token, config.TOKEN_SECRET).sub,
-          type: 'twitter',
-          name: userJson.name,
-          screen_name: userJson.screen_name,
-          location: userJson.location,
-          description: userJson.description,
-          url: userJson.url,
-          followers_count:  userJson.followers_count,
-          friends_count: userJson.friends_count,
-          listed_count: userJson.listed_count,
-          favorites_count: userJson.favorites_count,
-          statuses_count: userJson.statuses_count,
-          profile_background_image_url: userJson.profile_background_image_url,
-          profile_image_url: userJson.profile_image_url
+        ])
+        .then(([timeline, user]) => {
+          var userJson = JSON.parse(user);
+
+          return analytics.add({
+            id: userJson.id,
+            id_str: userJson.id_str,
+            user_searcher: jwt.decode(token, config.TOKEN_SECRET).sub,
+            type: 'twitter',
+            name: userJson.name,
+            screen_name: userJson.screen_name,
+            location: userJson.location,
+            description: userJson.description,
+            url: userJson.url,
+            followers_count: userJson.followers_count,
+            friends_count: userJson.friends_count,
+            listed_count: userJson.listed_count,
+            favorites_count: userJson.favorites_count,
+            statuses_count: userJson.statuses_count,
+            profile_background_image_url: userJson.profile_background_image_url,
+            profile_image_url: userJson.profile_image_url
+          })
         })
-      })
-      .then((response) => res.status(200).json(response))
-      .catch((err) => console.log(err))
+        .then((response) => res.status(200).json(response))
+        .catch((err) => console.log(err))
     })
   },
-  getHistory: function(req, res, next) {
+  getHistory: function (req, res, next) {
     analytics.getHistoy()
       .then((data) => res.status(200).json(data))
-      .then((err) => res.status(400).json({error: err}))
+      .then((err) => res.status(400).json({
+        error: err
+      }))
   },
   testing: function (req, res, next) {
     var token = req.headers.authorization;
