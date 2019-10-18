@@ -184,6 +184,9 @@ var analyticsSchema = new Schema({
   },
   profile_image_url: {
     type: String
+  },
+  tweets: {
+    type: Array
   }
 })
 

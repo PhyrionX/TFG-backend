@@ -55,7 +55,7 @@ async function getStatuses(searchParameter, accessToken, accessTokenSecret) {
         let newAcc;
         let partialNewAcc; 
 
-        if (tweetIds.filter(tw => tw === partialReplay.in_reply_to_status_id.toString())) {
+        if (tweetIds.filter(tw => partialReplay.in_reply_to_status_id && tw === partialReplay.in_reply_to_status_id.toString())) {
           if (acc[partialReplay.in_reply_to_status_id]) {
             partialNewAcc = [...acc[partialReplay.in_reply_to_status_id], {
               text: partialReplay.text,
@@ -89,37 +89,18 @@ async function getStatuses(searchParameter, accessToken, accessTokenSecret) {
 
         return newAcc;
       }, replaysForTweet);
-
-
-      console.log(replaysForTweet);
       
       lastId = statusResult.id;
       iterator++;
     }
-    // statuses
-    // .filter((stat) => moment(new Date(stat.created_at)) >= dateSevenDays)
-    // .map((status) => {
-    //   getReplys(searchParameter, accessToken, accessTokenSecret, status.id, lastId)
-    //     .then((response) => {
-    //       // console.log(response);
-
-    //       console.log(response.map((res) => ({
-    //         text: res.text,
-    //         created_at: res.created_at,
-    //         in_reply_to_status_id: res.in_reply_to_status_id,
-    //         in_reply_to_status_id_str: res.in_reply_to_status_id_str,
-    //         in_reply_to_user_id: res.in_reply_to_user_id,
-    //         in_reply_to_user_id_str: res.in_reply_to_user_id_str,
-    //         in_reply_to_screen_name: res.in_reply_to_screen_name,
-    //       })).filter((fil) => status.id === fil.in_reply_to_status_id))
-    //       console.log(status.id, status.text, response.length)
-    //       // lastId = status.id; 
-    //     })
-    //     .catch((err) => console.log(err))
-
-    //   lastId = status.id; 
-    // })
   }
+
+  return statuses.map((status) => 
+    replaysForTweet[status.id] ? 
+    ({
+      ...status,
+      replies: replaysForTweet[status.id]
+    }) : status)
 }
 
 function getReplys(searchParameter, accessToken, accessTokenSecret, sinceId, maxId) {
@@ -246,7 +227,7 @@ module.exports = {
             )
           )
         ])
-        .then(([timeline, user]) => {
+        .then(([tweets, user]) => {
           var userJson = JSON.parse(user);
 
           return analytics.add({
@@ -265,7 +246,8 @@ module.exports = {
             favorites_count: userJson.favorites_count,
             statuses_count: userJson.statuses_count,
             profile_background_image_url: userJson.profile_background_image_url,
-            profile_image_url: userJson.profile_image_url
+            profile_image_url: userJson.profile_image_url,
+            tweets
           })
         })
         .then((response) => res.status(200).json(response))
