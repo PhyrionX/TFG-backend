@@ -128,33 +128,26 @@ var analyticsSchema = new Schema({
     require: true,
   },
   user_searcher: {
-    type: String,
-    required: true
+    type: String
   },
   date_of_search: {
     type: Date,
-    required: true,
     default: Date.now
   },
   type: {
-    type: String,
-    required: true
+    type: String
   },
   name: {
-    type: String,
-    required: true
+    type: String
   },
   screen_name: {
-    type: String,
-    required: true
+    type: String
   },
   location: {
-    type: String,
-    required: true
+    type: String
   },
   description: {
-    type: String,
-    required: true
+    type: String
   },
   url: {
     type: String
@@ -176,8 +169,7 @@ var analyticsSchema = new Schema({
     require: true,
   },
   statuses_count: {
-    type: Number,
-    required: true
+    type: Number
   },
   profile_background_image_url: {
     type: String

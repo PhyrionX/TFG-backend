@@ -27,7 +27,9 @@ async function getStatuses(searchParameter, accessToken, accessTokenSecret) {
   let replaysForTweet = {};
 
   do {
-    result = (await getStat(searchParameter, accessToken, accessTokenSecret, maxId));
+    console.log(`Getting statuses -> ${ statuses.length }`);
+    
+    result = (await getStat(searchParameter, accessToken, accessTokenSecret, maxId)).filter((stat) => moment(new Date(stat.created_at)) >= dateSevenDays);
 
     statuses = [...statuses, ...result]
 
@@ -41,13 +43,14 @@ async function getStatuses(searchParameter, accessToken, accessTokenSecret) {
       iterator = 0;
 
 
-    const lastDaysStatuses = statuses.filter((stat) => moment(new Date(stat.created_at)) >= dateSevenDays)
-    let tweetIds = lastDaysStatuses.map((stat) => stat.id.toString());
-
-    while (iterator < lastDaysStatuses.length) {
-      // console.log(replaysForTweet);
-      
-      let statusResult = lastDaysStatuses[iterator];
+    // const lastDaysStatuses = statuses
+    let tweetIds = statuses.map((stat) => stat.id.toString());
+    console.log(`Statuses in the last seven days ${statuses.length }`);
+    
+    while (iterator < statuses.length) { 
+      console.log(`Replays for the status ${ iterator }`);
+           
+      let statusResult = statuses[iterator];
       let partialReplays = await getReplys(searchParameter, accessToken, accessTokenSecret, statusResult.id, lastId);
 
       replaysForTweet = partialReplays.reduce((acc, partialReplay) => {
@@ -110,7 +113,7 @@ function getReplys(searchParameter, accessToken, accessTokenSecret, sinceId, max
     maxIdString = `&max_id=${ maxId }`
   }
 
-  console.log(`${ twitter.acciones.search }?q=to%3A${ searchParameter }&result_type=recent&count=100&since_id=${ sinceId }${ maxIdString }`);
+  // console.log(`${ twitter.acciones.search }?q=to%3A${ searchParameter }&result_type=recent&count=100&since_id=${ sinceId }${ maxIdString }`);
 
   return new Promise((resolve, reject) =>
     oauth.get(`${ twitter.acciones.search }?q=to%3A${ searchParameter }&result_type=recent&count=100&since_id=${ sinceId }${ maxIdString }`,
@@ -211,6 +214,11 @@ module.exports = {
       });
     });
   },
+  getSavedSearch: function (req, res, next) {
+    analytics.getSavedSearch(req.params.idSearch)
+      .then((search) => res.status(200).json(search))
+      .catch((err) => res.status(400).json({error: 1}))
+  },
   friend_timeline: function (req, res, next) {
     var token = req.headers.authorization;
     user.getUser(jwt.decode(token, config.TOKEN_SECRET).sub, function (err, data) {
@@ -257,9 +265,12 @@ module.exports = {
   getHistory: function (req, res, next) {
     analytics.getHistoy()
       .then((data) => res.status(200).json(data))
-      .then((err) => res.status(400).json({
-        error: err
-      }))
+      .catch((err) => {
+        console.log(err.message);
+        
+        return res.status(400).json({
+        error: '1'
+      })})
   },
   testing: function (req, res, next) {
     var token = req.headers.authorization;

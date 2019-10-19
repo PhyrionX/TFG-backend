@@ -98,6 +98,7 @@ app.post("/auth/twitter", twitterController.getOauth);
 app.get("/auth/twitter/callback", twitterController.callbackOauth);
 app.get("/api/twitter/timelines/:accessToken/:accessTokenSecret/:twitter", middleware.ensureAuthenticated, twitterController.getTimelines);
 app.get("/api/twitter/suggestions/:search", middleware.ensureAuthenticated, twitterController.getSuggestions);
+app.get("/api/twitter/saved_search/:idSearch", middleware.ensureAuthenticated, twitterController.getSavedSearch);
 app.get("/api/twitter/testing/:search", middleware.ensureAuthenticated, twitterController.testing);
 app.get("/api/twitter/friend_timeline/:search", middleware.ensureAuthenticated, twitterController.friend_timeline);
 

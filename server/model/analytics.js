@@ -12,14 +12,22 @@ module.exports = {
     });
   },
   // //devuelve todos menos el admin
-  getHistoy: function() {
-      return new Promise((resolve, reject) => { 
-        Analytics.find({}, function(err, analytics) {
-          if (err) reject(err);
-          resolve(analytics);
-        });
+  getHistoy: function () {
+    return new Promise((resolve, reject) => {
+      Analytics.find({}, function (err, analytics) {
+        if (err) reject(err);
+        resolve(analytics);
       });
+    });
   },
+  getSavedSearch: function(_id) {
+    return new Promise((resolve, reject) => {
+      Analytics.find({_id}, function (err, analytics) {
+        if (err) reject(err);        
+        resolve(analytics[0]);
+      });
+    });
+  }
   // getUser: function(_email, callback) {
   //     User.findOne({email: _email}, function(err, user) {
   //         callback(err, user);
