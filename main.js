@@ -22,6 +22,7 @@ var express = require('express'),
     jobs = require("./server/utils/jobs"),
     util = require('./server/utils/utils'),
     init = require('./server/utils/init'),
+    sentiment = require('multilang-sentiment');
     stats = require('./server/controllers/stats');
 
 var app = express();
@@ -134,3 +135,10 @@ app.listen(app.get('port'), function() {
     console.log('Node app is running on port', app.get('port'));
 });
 
+var r1 = sentiment('Cats are stupid.', 'en');
+console.dir(r1);        // Score: -2, Comparative: -0.666
+
+var r2 = sentiment('Cats are totally amazing!'); // "en" by default
+console.dir(r2);        // Score: 4, Comparative: 1
+
+console.log(sentiment('Y este muchacho Hazard como siga con esa actitud de todo me interesa lo mismo que un culo, el hateo y su salida del madrid será pronta y feroz.', 'es'));

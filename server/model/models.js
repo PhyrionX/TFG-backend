@@ -182,6 +182,21 @@ var analyticsSchema = new Schema({
   }
 })
 
+var tweetsSchema = new Schema({
+  id_of_analityc: {
+    type: String,
+    require: true
+  },
+  state: {
+    type: String,
+    require: true
+  },
+  tweets: {
+    type: Array
+  }
+})
+
 // Export the User model
 exports.User = mongoose.model('User', userSchema);
 exports.Analytics = mongoose.model('Analytics', analyticsSchema);
+exports.Tweets = mongoose.model('Tweets', tweetsSchema);

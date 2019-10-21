@@ -1,5 +1,5 @@
 {
-  "name": "OPbird",
+  "name": "social-analitycs",
   "version": "1.0.0",
   "description": "Aplicación de twitter",
   "main": "main.js",
@@ -23,6 +23,7 @@
     "method-override": "latest",
     "moment": "^2.24.0",
     "mongoose": "latest",
+    "multilang-sentiment": "^1.2.0",
     "node-cron": "^1.1.1",
     "oauth": "latest",
     "passport": "latest",

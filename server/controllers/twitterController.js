@@ -4,7 +4,9 @@ var crypto = require('crypto'),
     twitter = require('../config/twitterConnection'),
     user = require('../model/users'),
     moment = require('moment'),
-    analytics = require('../model/analytics');
+    analytics = require('../model/analytics'),
+    sentiment = require('multilang-sentiment'),
+    tweets = require('../model/tweets');
 var jwt = require('jwt-simple');
 var config = require('../config/config');
 
@@ -19,16 +21,28 @@ var OAuth = require('oauth').OAuth,
     twitter.signature
   );
 
-async function getStatuses(searchParameter, accessToken, accessTokenSecret) {
+async function getStatuses(searchParameter, idOfAnalityc, accessToken, accessTokenSecret) {
   let statuses = [];
   let result = []
   let maxId = 0;
   let dateSevenDays = moment(Date.now() - 7 * 24 * 3600 * 1000);
   let replaysForTweet = {};
 
+  // const tweetsObject = {
+  //   id_of_analityc: idOfAnalityc,
+  //   state: 'init',
+  //   tweets: []
+  // }
+
+  
+  
+  // let savedTweetsObject = await tweets.add(tweetsObject);
+  
+  // console.log(savedTweetsObject);
+
   do {
     console.log(`Getting statuses -> ${ statuses.length }`);
-    
+
     result = (await getStat(searchParameter, accessToken, accessTokenSecret, maxId)).filter((stat) => moment(new Date(stat.created_at)) >= dateSevenDays);
 
     statuses = [...statuses, ...result]
@@ -46,22 +60,23 @@ async function getStatuses(searchParameter, accessToken, accessTokenSecret) {
     // const lastDaysStatuses = statuses
     let tweetIds = statuses.map((stat) => stat.id.toString());
     console.log(`Statuses in the last seven days ${statuses.length }`);
-    
-    while (iterator < statuses.length) { 
+
+    while (iterator < statuses.length) {
       console.log(`Replays for the status ${ iterator }`);
-           
+
       let statusResult = statuses[iterator];
       let partialReplays = await getReplys(searchParameter, accessToken, accessTokenSecret, statusResult.id, lastId);
 
       replaysForTweet = partialReplays.reduce((acc, partialReplay) => {
 
         let newAcc;
-        let partialNewAcc; 
+        let partialNewAcc;
 
         if (tweetIds.filter(tw => partialReplay.in_reply_to_status_id && tw === partialReplay.in_reply_to_status_id.toString())) {
           if (acc[partialReplay.in_reply_to_status_id]) {
             partialNewAcc = [...acc[partialReplay.in_reply_to_status_id], {
               text: partialReplay.text,
+              sentiment_score: sentiment(partialReplay.text, 'es'),
               created_at: partialReplay.created_at,
               in_reply_to_status_id: partialReplay.in_reply_to_status_id,
               in_reply_to_status_id_str: partialReplay.in_reply_to_status_id_str,
@@ -72,6 +87,7 @@ async function getStatuses(searchParameter, accessToken, accessTokenSecret) {
           } else {
             partialNewAcc = [{
               text: partialReplay.text,
+              sentiment_score: sentiment(partialReplay.text, 'es'),
               created_at: partialReplay.created_at,
               in_reply_to_status_id: partialReplay.in_reply_to_status_id,
               in_reply_to_status_id_str: partialReplay.in_reply_to_status_id_str,
@@ -92,18 +108,38 @@ async function getStatuses(searchParameter, accessToken, accessTokenSecret) {
 
         return newAcc;
       }, replaysForTweet);
-      
+
       lastId = statusResult.id;
       iterator++;
     }
   }
 
-  return statuses.map((status) => 
+  let tweetsObject = {
+    id_of_analityc: idOfAnalityc,
+    state: 'Done',
+    tweets: statuses.map((status) => 
     replaysForTweet[status.id] ? 
     ({
       ...status,
       replies: replaysForTweet[status.id]
     }) : status)
+  }
+
+  // savedTweetsObject = {
+  //   _id: savedTweetsObject._id,
+  //   state: 'Done',
+  //   tweets: statuses.map((status) =>
+  //     replaysForTweet[status.id] ?
+  //     ({
+  //       ...status,
+  //       replies: replaysForTweet[status.id]
+  //     }) : status)
+  // }
+
+  // console.log(savedTweetsObject._id);
+
+
+  tweets.add(tweetsObject);
 }
 
 function getReplys(searchParameter, accessToken, accessTokenSecret, sinceId, maxId) {
@@ -217,25 +253,27 @@ module.exports = {
   getSavedSearch: function (req, res, next) {
     analytics.getSavedSearch(req.params.idSearch)
       .then((search) => res.status(200).json(search))
-      .catch((err) => res.status(400).json({error: 1}))
+      .catch((err) => res.status(400).json({
+        error: 1
+      }))
   },
   friend_timeline: function (req, res, next) {
     var token = req.headers.authorization;
     user.getUser(jwt.decode(token, config.TOKEN_SECRET).sub, function (err, data) {
       if (err) return res.status(400);
-      Promise.all([
-          getStatuses(req.params.search),
-          new Promise((resolve, reject) =>
-            oauth.get(twitter.acciones.users_show + "?screen_name=" + req.params.search,
-              data.cuentas[0].access_token, data.cuentas[0].access_token_secret,
-              function (err, response, result) {
-                if (err) reject(err)
-                resolve(response);
-              }
-            )
+      // Promise.all([
+      //     getStatuses(req.params.search),
+      new Promise((resolve, reject) =>
+          oauth.get(twitter.acciones.users_show + "?screen_name=" + req.params.search,
+            data.cuentas[0].access_token, data.cuentas[0].access_token_secret,
+            function (err, response, result) {
+              if (err) reject(err)
+              resolve(response);
+            }
           )
-        ])
-        .then(([tweets, user]) => {
+        )
+        // ])
+        .then((user) => {
           var userJson = JSON.parse(user);
 
           return analytics.add({
@@ -255,10 +293,12 @@ module.exports = {
             statuses_count: userJson.statuses_count,
             profile_background_image_url: userJson.profile_background_image_url,
             profile_image_url: userJson.profile_image_url,
-            tweets
           })
         })
-        .then((response) => res.status(200).json(response))
+        .then((response) => {
+          getStatuses(req.params.search, response._id)
+          return res.status(200).json(response)
+        })
         .catch((err) => console.log(err))
     })
   },
@@ -267,10 +307,11 @@ module.exports = {
       .then((data) => res.status(200).json(data))
       .catch((err) => {
         console.log(err.message);
-        
+
         return res.status(400).json({
-        error: '1'
-      })})
+          error: '1'
+        })
+      })
   },
   testing: function (req, res, next) {
     var token = req.headers.authorization;
