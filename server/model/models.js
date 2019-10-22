@@ -192,7 +192,8 @@ var tweetsSchema = new Schema({
     require: true
   },
   tweets: {
-    type: Array
+    type: Array,
+    default: []
   }
 })
 

@@ -30,8 +30,7 @@ async function getStatuses(searchParameter, idOfAnalityc, accessToken, accessTok
 
   // const tweetsObject = {
   //   id_of_analityc: idOfAnalityc,
-  //   state: 'init',
-  //   tweets: []
+  //   state: 'init'
   // }
 
   
@@ -43,28 +42,31 @@ async function getStatuses(searchParameter, idOfAnalityc, accessToken, accessTok
   do {
     console.log(`Getting statuses -> ${ statuses.length }`);
 
-    result = (await getStat(searchParameter, accessToken, accessTokenSecret, maxId)).filter((stat) => moment(new Date(stat.created_at)) >= dateSevenDays);
+    result = (await getStat(searchParameter, accessToken, accessTokenSecret, maxId));
+
+    console.log(result.length);
+    
 
     statuses = [...statuses, ...result]
 
     if (statuses.length > 0) {
       maxId = statuses[statuses.length - 1].id;
     }
-  } while (result.length == 200);
+  } while (result.length > 1);
 
   if (statuses.length > 0) {
     let lastId = null,
       iterator = 0;
 
 
-    // const lastDaysStatuses = statuses
+    const lastDaysStatuses = statuses.filter((stat) => moment(new Date(stat.created_at)) >= dateSevenDays);
     let tweetIds = statuses.map((stat) => stat.id.toString());
-    console.log(`Statuses in the last seven days ${statuses.length }`);
+    console.log(`Statuses in the last seven days ${statuses.length } and lastSeven days ${ lastDaysStatuses.length }`);
 
-    while (iterator < statuses.length) {
+    while (iterator < lastDaysStatuses.length) {
       console.log(`Replays for the status ${ iterator }`);
 
-      let statusResult = statuses[iterator];
+      let statusResult = lastDaysStatuses[iterator];
       let partialReplays = await getReplys(searchParameter, accessToken, accessTokenSecret, statusResult.id, lastId);
 
       replaysForTweet = partialReplays.reduce((acc, partialReplay) => {
@@ -127,6 +129,7 @@ async function getStatuses(searchParameter, idOfAnalityc, accessToken, accessTok
 
   // savedTweetsObject = {
   //   _id: savedTweetsObject._id,
+  //   id_of_analityc: idOfAnalityc,
   //   state: 'Done',
   //   tweets: statuses.map((status) =>
   //     replaysForTweet[status.id] ?
