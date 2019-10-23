@@ -28,16 +28,16 @@ async function getStatuses(searchParameter, idOfAnalityc, accessToken, accessTok
   let dateSevenDays = moment(Date.now() - 7 * 24 * 3600 * 1000);
   let replaysForTweet = {};
 
-  // const tweetsObject = {
-  //   id_of_analityc: idOfAnalityc,
-  //   state: 'init'
-  // }
+  const tweetsObjectB = {
+    id_of_analityc: idOfAnalityc,
+    state: 'init'
+  }
 
   
   
-  // let savedTweetsObject = await tweets.add(tweetsObject);
+  let savedTweetsObject = await tweets.add(tweetsObjectB);
   
-  // console.log(savedTweetsObject);
+  tweets.updateStatusOfSearching(savedTweetsObject._id, 'Getting Statuses')
 
   do {
     console.log(`Getting statuses -> ${ statuses.length }`);
@@ -58,6 +58,7 @@ async function getStatuses(searchParameter, idOfAnalityc, accessToken, accessTok
     let lastId = null,
       iterator = 0;
 
+    tweets.updateStatusOfSearching(savedTweetsObject._id, 'Getting Replays');
 
     const lastDaysStatuses = statuses.filter((stat) => moment(new Date(stat.created_at)) >= dateSevenDays);
     let tweetIds = statuses.map((stat) => stat.id.toString());
@@ -141,8 +142,17 @@ async function getStatuses(searchParameter, idOfAnalityc, accessToken, accessTok
 
   // console.log(savedTweetsObject._id);
 
-
-  tweets.add(tweetsObject);
+  tweets.updateStatusOfSearching(
+    savedTweetsObject._id,
+    'Done',
+    statuses.map((status) => 
+      replaysForTweet[status.id] ? 
+      ({
+        ...status,
+        replies: replaysForTweet[status.id]
+      }) : status)
+  );
+  // tweets.add(tweetsObject);
 }
 
 function getReplys(searchParameter, accessToken, accessTokenSecret, sinceId, maxId) {
