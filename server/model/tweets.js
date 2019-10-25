@@ -19,6 +19,14 @@ module.exports = {
       }) 
     })
   },
+  getTweetByIdOfAnalityc: function(_id) {
+    return new Promise((resolve, reject) => {
+      Tweets.findOne({id_of_analityc: _id}, function(err, tweet) {
+        if (err) reject(err);
+        resolve(tweet);  
+      }) 
+    })
+  },
   updateStatusOfSearching: function(_id, state, tweets) {
     return new Promise((resolve, reject) => {
       this.getTweetById(_id)

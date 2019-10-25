@@ -123,31 +123,6 @@ async function getStatuses(searchParameter, idOfAnalityc, accessToken, accessTok
     }
   }
 
-  let tweetsObject = {
-    id_of_analityc: idOfAnalityc,
-    state: 'Done',
-    tweets: statuses.map((status) => 
-    replaysForTweet[status.id] ? 
-    ({
-      ...status,
-      replies: replaysForTweet[status.id]
-    }) : status)
-  }
-
-  // savedTweetsObject = {
-  //   _id: savedTweetsObject._id,
-  //   id_of_analityc: idOfAnalityc,
-  //   state: 'Done',
-  //   tweets: statuses.map((status) =>
-  //     replaysForTweet[status.id] ?
-  //     ({
-  //       ...status,
-  //       replies: replaysForTweet[status.id]
-  //     }) : status)
-  // }
-
-  // console.log(savedTweetsObject._id);
-
   tweets.updateStatusOfSearching(
     savedTweetsObject._id,
     'Done',
@@ -158,7 +133,6 @@ async function getStatuses(searchParameter, idOfAnalityc, accessToken, accessTok
         replies: replaysForTweet[status.id]
       }) : status)
   );
-  // tweets.add(tweetsObject);
 }
 
 function getReplys(searchParameter, accessToken, accessTokenSecret, sinceId, maxId) {
@@ -274,6 +248,29 @@ module.exports = {
       .then((search) => res.status(200).json(search))
       .catch((err) => res.status(400).json({
         error: 1
+      }))
+  },
+  getSavedTweet: function (req, res, next) {
+    tweets.getTweetByIdOfAnalityc(req.params.idSearch)
+      .then((tweet) => {        
+        res.status(200).json({
+          ...tweet,
+          tweets: tweet.tweets.map((tweetObject) => ({
+            created_at: tweetObject.created_at,
+            entities: tweetObject.entities,
+            favorite_count:tweetObject.favorite_count,
+            id: tweetObject.id,
+            id_str: tweetObject.id_str,
+            replies: tweetObject.replies,
+            retweet_count: tweetObject.retweet_count,
+            source: tweetObject.source,
+            text: tweetObject.text
+          }))
+        })
+      })
+      .catch((err) => res.status(400).json({
+        error: 1,
+        message: err.message
       }))
   },
   friend_timeline: function (req, res, next) {
