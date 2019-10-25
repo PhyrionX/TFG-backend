@@ -68,7 +68,13 @@ async function getStatuses(searchParameter, idOfAnalityc, accessToken, accessTok
       console.log(`Replays for the status ${ iterator }`);
 
       let statusResult = lastDaysStatuses[iterator];
-      let partialReplays = await getReplys(searchParameter, accessToken, accessTokenSecret, statusResult.id, lastId);
+      let partialReplays = [];
+
+      try {
+        partialReplays = await getReplys(searchParameter, accessToken, accessTokenSecret, statusResult.id, lastId);
+      } catch (err) {
+        console.error(err);        
+      };
 
       replaysForTweet = partialReplays.reduce((acc, partialReplay) => {
 
