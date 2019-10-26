@@ -252,9 +252,9 @@ module.exports = {
   },
   getSavedTweet: function (req, res, next) {
     tweets.getTweetByIdOfAnalityc(req.params.idSearch)
-      .then((tweet) => {        
+      .then((tweet) => {   
         res.status(200).json({
-          ...tweet,
+          state: tweet.state,
           tweets: tweet.tweets.map((tweetObject) => ({
             created_at: tweetObject.created_at,
             entities: tweetObject.entities,
