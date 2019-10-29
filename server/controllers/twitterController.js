@@ -60,7 +60,7 @@ async function getStatuses(searchParameter, idOfAnalityc, accessToken, accessTok
 
     tweets.updateStatusOfSearching(savedTweetsObject._id, 'Getting Replays');
 
-    const lastDaysStatuses = statuses.filter((stat) => moment(new Date(stat.created_at)) >= dateSevenDays);
+    const lastDaysStatuses = statuses.filter((stat) => moment(new Date(stat.created_at)) >= dateSevenDays).slice(0, 70);
     let tweetIds = statuses.map((stat) => stat.id.toString());
     console.log(`Statuses in the last seven days ${statuses.length } and lastSeven days ${ lastDaysStatuses.length }`);
 
@@ -85,7 +85,7 @@ async function getStatuses(searchParameter, idOfAnalityc, accessToken, accessTok
           if (acc[partialReplay.in_reply_to_status_id]) {
             partialNewAcc = [...acc[partialReplay.in_reply_to_status_id], {
               text: partialReplay.text,
-              sentiment_score: sentiment(partialReplay.text, 'es'),
+              sentiment_score: getSemtimentData(partialReplay.text),
               created_at: partialReplay.created_at,
               in_reply_to_status_id: partialReplay.in_reply_to_status_id,
               in_reply_to_status_id_str: partialReplay.in_reply_to_status_id_str,
@@ -96,7 +96,7 @@ async function getStatuses(searchParameter, idOfAnalityc, accessToken, accessTok
           } else {
             partialNewAcc = [{
               text: partialReplay.text,
-              sentiment_score: sentiment(partialReplay.text, 'es'),
+              sentiment_score: getSemtimentData(partialReplay.text),
               created_at: partialReplay.created_at,
               in_reply_to_status_id: partialReplay.in_reply_to_status_id,
               in_reply_to_status_id_str: partialReplay.in_reply_to_status_id_str,
@@ -132,7 +132,11 @@ async function getStatuses(searchParameter, idOfAnalityc, accessToken, accessTok
         ...status,
         replies: replaysForTweet[status.id]
       }) : status)
-  );
+  ).catch(err => console.log('err=> ', err));
+}
+
+function getSemtimentData(text) {
+  return sentiment(text, 'es');
 }
 
 function getReplys(searchParameter, accessToken, accessTokenSecret, sinceId, maxId) {
@@ -264,7 +268,9 @@ module.exports = {
             replies: tweetObject.replies,
             retweet_count: tweetObject.retweet_count,
             source: tweetObject.source,
-            text: tweetObject.text
+            text: tweetObject.text,
+            user_image: tweetObject.user.profile_image_url,
+            user_screen_name: tweetObject.user.screen_name
           }))
         })
       })
@@ -313,6 +319,7 @@ module.exports = {
         })
         .then((response) => {
           getStatuses(req.params.search, response._id)
+          .catch((e) => console.log('error => ', e))
           return res.status(200).json(response)
         })
         .catch((err) => console.log(err))

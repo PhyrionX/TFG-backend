@@ -38,7 +38,8 @@ module.exports = {
             tweet.tweets = tweets;
           }
 
-          tweet.save();
+          tweet.save()
+          .catch(err => console.log('err', err));
           resolve(tweet);
         })
         .catch((err) => {
