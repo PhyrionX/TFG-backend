@@ -5,6 +5,7 @@ var crypto = require('crypto'),
     user = require('../model/users'),
     moment = require('moment'),
     analytics = require('../model/analytics'),
+    analitycsInfo = require('../model/analitycsInfo'),
     sentiment = require('multilang-sentiment'),
     tweets = require('../model/tweets');
 var jwt = require('jwt-simple');
@@ -28,16 +29,17 @@ async function getStatuses(searchParameter, idOfAnalityc, accessToken, accessTok
   let dateSevenDays = moment(Date.now() - 7 * 24 * 3600 * 1000);
   let replaysForTweet = {};
 
-  const tweetsObjectB = {
+  const analitycsObject = {
     id_of_analityc: idOfAnalityc,
     state: 'init'
   }
 
   
   
-  let savedTweetsObject = await tweets.add(tweetsObjectB);
+  let savedAnlitycObject = await analitycsInfo.add(analitycsObject);
   
-  tweets.updateStatusOfSearching(savedTweetsObject._id, 'Getting Statuses')
+  analitycsInfo.updateStatusOfAnalisys(savedAnlitycObject._id, { state: 'Getting Statuses'})
+  .catch((err) => console.log(err))
 
   do {
     console.log(`Getting statuses -> ${ statuses.length }`);
@@ -54,15 +56,50 @@ async function getStatuses(searchParameter, idOfAnalityc, accessToken, accessTok
     }
   } while (result.length > 1);
 
-  if (statuses.length > 0) {
+  const ownPosts = statuses.filter(el => !el.retweeted_status);
+  const sharePosts = statuses.filter(el => !!el.retweeted_status);
+  const analitycsORM =  ownPosts.reduce((acc, curr) => ({
+    ...acc,
+    hashtagsTotal: acc.hashtagsTotal + curr.entities.hashtags.length,
+    hashtags: [...acc.hashtags, ...curr.entities.hashtags.map(el => el.text)],
+    mediasTotal: curr.entities.media ? acc.mediasTotal + curr.entities.media.length : acc.mediasTotal + 0,
+    urlsTotal: acc.urlsTotal + curr.entities.urls.length,
+    userMentionsTotal: acc.userMentionsTotal + curr.entities.user_mentions.length,
+    userMentions: [...acc.userMentions, ...curr.entities.user_mentions.map(el => el.screen_name)],
+    favoritesTotal: acc.favoritesTotal + curr.favorite_count,
+    retweetsTotal: acc.retweetsTotal + curr.retweet_count
+  }), {
+    mediasTotal: 0,
+    urlsTotal: 0,
+    userMentions: [],
+    userMentionsTotal: 0,
+    hashtags: [],
+    hashtagsTotal: 0,
+    favoritesTotal: 0,
+    retweetsTotal: 0,
+    dateInit: ownPosts.length > 0 && ownPosts[ownPosts.length - 1].created_at,
+    dateEnd: ownPosts.length > 0 &&  ownPosts[0].created_at,
+    ownPosts: ownPosts.length,
+    sharePosts: sharePosts.length,
+    postsInDay: getTweetsPerTime(ownPosts, 'DAYS'),
+    postsInMonth: getTweetsPerTime(ownPosts, 'MONTHS')
+  });
+
+  analitycsORM.userMentionsGrouped = analitycsORM.userMentions.reduce(groupCount2, []);
+  analitycsORM.hashtagsGrouped = analitycsORM.hashtags.reduce(groupCount2, []);
+
+  // console.log(analitycs);
+  
+  if (ownPosts.length > 0) {
     let lastId = null,
       iterator = 0;
 
-    tweets.updateStatusOfSearching(savedTweetsObject._id, 'Getting Replays');
+      analitycsInfo.updateStatusOfAnalisys(savedAnlitycObject._id, { state: 'Getting Replays'})
+  .catch((err) => console.log(err))
 
-    const lastDaysStatuses = statuses.filter((stat) => moment(new Date(stat.created_at)) >= dateSevenDays).slice(0, 70);
-    let tweetIds = statuses.map((stat) => stat.id.toString());
-    console.log(`Statuses in the last seven days ${statuses.length } and lastSeven days ${ lastDaysStatuses.length }`);
+    const lastDaysStatuses = ownPosts.filter((stat) => moment(new Date(stat.created_at)) >= dateSevenDays);
+    let tweetIds = ownPosts.map((stat) => stat.id.toString());
+    console.log(`Statuses ${ownPosts.length } and lastSeven days ${ lastDaysStatuses.length }`);
 
     while (iterator < lastDaysStatuses.length) {
       console.log(`Replays for the status ${ iterator }`);
@@ -81,32 +118,13 @@ async function getStatuses(searchParameter, idOfAnalityc, accessToken, accessTok
         let newAcc;
         let partialNewAcc;
 
-        if (tweetIds.filter(tw => partialReplay.in_reply_to_status_id && tw === partialReplay.in_reply_to_status_id.toString())) {
+        if (tweetIds.filter(tw => partialReplay.in_reply_to_status_id && tw === partialReplay.in_reply_to_status_id.toString()).length > 0) {
           if (acc[partialReplay.in_reply_to_status_id]) {
-            partialNewAcc = [...acc[partialReplay.in_reply_to_status_id], {
-              text: partialReplay.text,
-              sentiment_score: getSemtimentData(partialReplay.text),
-              created_at: partialReplay.created_at,
-              in_reply_to_status_id: partialReplay.in_reply_to_status_id,
-              in_reply_to_status_id_str: partialReplay.in_reply_to_status_id_str,
-              in_reply_to_user_id: partialReplay.in_reply_to_user_id,
-              in_reply_to_user_id_str: partialReplay.in_reply_to_user_id_str,
-              in_reply_to_screen_name: partialReplay.in_reply_to_screen_name
-            }];
+            partialNewAcc = getSemtimentData(partialReplay.text, acc[partialReplay.in_reply_to_status_id]);
           } else {
-            partialNewAcc = [{
-              text: partialReplay.text,
-              sentiment_score: getSemtimentData(partialReplay.text),
-              created_at: partialReplay.created_at,
-              in_reply_to_status_id: partialReplay.in_reply_to_status_id,
-              in_reply_to_status_id_str: partialReplay.in_reply_to_status_id_str,
-              in_reply_to_user_id: partialReplay.in_reply_to_user_id,
-              in_reply_to_user_id_str: partialReplay.in_reply_to_user_id_str,
-              in_reply_to_screen_name: partialReplay.in_reply_to_screen_name
-            }];
+            partialNewAcc = getSemtimentData(partialReplay.text)
           }
-
-
+          
           newAcc = {
             ...acc,
             [partialReplay.in_reply_to_status_id]: partialNewAcc
@@ -114,29 +132,92 @@ async function getStatuses(searchParameter, idOfAnalityc, accessToken, accessTok
         } else {
           newAcc = acc
         }
-
         return newAcc;
-      }, replaysForTweet);
+      }, replaysForTweet)
 
       lastId = statusResult.id;
       iterator++;
     }
   }
+  
+  analitycsORM.replies = Object.entries(replaysForTweet).map(el => ({ id: el[0], ...el[1]}));
+  analitycsORM.state = 'Done';
 
-  tweets.updateStatusOfSearching(
-    savedTweetsObject._id,
-    'Done',
-    statuses.map((status) => 
-      replaysForTweet[status.id] ? 
-      ({
-        ...status,
-        replies: replaysForTweet[status.id]
-      }) : status)
-  ).catch(err => console.log('err=> ', err));
+
+  analitycsInfo.updateStatusOfAnalisys(savedAnlitycObject._id, analitycsORM)
+  .catch((err) => console.log(err))
+
+  tweets.add({
+    tweets: ownPosts.map(post => ({
+      id: post.id,
+      id_str: post.id_str,
+      text: post.text,
+      entities: post.entities,
+      created_at: post.created_at,
+      retweet_count: post.retweet_count,
+      favorite_count: post.favorite_count
+    })),
+    id_of_analityc: idOfAnalityc
+  })
 }
 
-function getSemtimentData(text) {
-  return sentiment(text, 'es');
+function groupCount2(acc, curr) {
+  return !acc.find((el) => el.value === curr) ? [...acc, { value: curr, count: 1 }]
+  : acc.map((el) => el.value === curr ? { ...el, count: el.count + 1 } : el);
+}
+
+function getTweetsPerTime(tweets, tweetsTimeChart) {
+  return tweets.reduce((acc, curr) => {
+      const keyName = moment(new Date(curr.created_at)).format(tweetsTimeChart === 'DAYS' ? 'DD-MM-YY' : 'MM-YY');
+      
+      return acc.map((el) => el.name === keyName ? { 
+        ...el,
+        onlyText: !curr.entities.media && curr.entities.urls.length === 0 ? el.onlyText + 1 : el.onlyText,
+        textAndUrls: !curr.entities.media && curr.entities.urls.length > 0 ? el.textAndUrls + 1 : el.textAndUrls,
+        textAndMedia: curr.entities.media && curr.entities.urls.length === 0 ? el.textAndMedia + 1 : el.textAndMedia,
+        textUrlsAndMedia: curr.entities.media && curr.entities.urls.length > 0 ? el.textUrlsAndMedia + 1 : el.textUrlsAndMedia,
+        tweets: el.tweets + 1 } : el)
+    }, getArrayOfDatesBetween(tweets[tweets.length - 1].created_at, tweets[0].created_at, tweetsTimeChart))
+}
+
+function getArrayOfDatesBetween(startDate, endDate, tweetsTimeChart) {
+  let dates = [];
+  
+  let currDate = moment(new Date(startDate)).startOf(tweetsTimeChart === 'DAYS' ? 'day' : 'month');
+  let lastDate = moment(new Date(endDate)).startOf(tweetsTimeChart === 'DAYS' ? 'day' : 'month');
+
+  while(currDate.add(1, tweetsTimeChart === 'DAYS' ? 'days' : 'months').diff(lastDate) <= 0) {
+    dates.push({
+      name: currDate.format(tweetsTimeChart === 'DAYS' ? 'DD-MM-YY' : 'MM-YY'),
+      tweets: 0,
+      onlyText: 0,
+      textAndUrls: 0,
+      textAndMedia: 0,
+      textUrlsAndMedia: 0
+    });
+  }
+  
+  return dates.reverse()
+}
+
+function getSemtimentData(text, partial) {
+  const sentimentScore = sentiment(text, 'es').score;
+  let sentimentObject = partial ? 
+  {
+    replies: partial.replies + 1,
+    score: sentimentScore + partial.score,
+    positive: sentimentScore > 0 ? partial.positive + 1 : partial.positive,
+    negative: sentimentScore < 0 ? partial.negative + 1 : partial.negative,
+    neutral: sentimentScore === 0 ? partial.neutral + 1 : partial.neutral
+  }
+  : {
+    replies: 1,
+    score: sentimentScore,
+    positive: sentimentScore > 0 ?  1 : 0,
+    negative: sentimentScore < 0 ?  1 : 0,
+    neutral: sentimentScore === 0 ?  1 : 0
+  }
+  return sentimentObject;
 }
 
 function getReplys(searchParameter, accessToken, accessTokenSecret, sinceId, maxId) {
@@ -255,29 +336,35 @@ module.exports = {
       }))
   },
   getSavedTweet: function (req, res, next) {
-    tweets.getTweetByIdOfAnalityc(req.params.idSearch)
-      .then((tweet) => {   
-        res.status(200).json({
-          state: tweet.state,
-          tweets: tweet.tweets.map((tweetObject) => ({
-            created_at: tweetObject.created_at,
-            entities: tweetObject.entities,
-            favorite_count:tweetObject.favorite_count,
-            id: tweetObject.id,
-            id_str: tweetObject.id_str,
-            replies: tweetObject.replies,
-            retweet_count: tweetObject.retweet_count,
-            source: tweetObject.source,
-            text: tweetObject.text,
-            user_image: tweetObject.user.profile_image_url,
-            user_screen_name: tweetObject.user.screen_name
-          }))
-        })
-      })
+    analitycsInfo.getAnalitycInfoByIdOfAnalityco(req.params.idSearch)
+      .then((analitycInfo) => res.status(200).json(analitycInfo))
       .catch((err) => res.status(400).json({
         error: 1,
         message: err.message
       }))
+    // tweets.getTweetByIdOfAnalityc(req.params.idSearch)
+    //   .then((tweet) => {   
+    //     res.status(200).json({
+    //       state: tweet.state,
+    //       tweets: tweet.tweets.map((tweetObject) => ({
+    //         created_at: tweetObject.created_at,
+    //         entities: tweetObject.entities,
+    //         favorite_count:tweetObject.favorite_count,
+    //         id: tweetObject.id,
+    //         id_str: tweetObject.id_str,
+    //         replies: tweetObject.replies,
+    //         retweet_count: tweetObject.retweet_count,
+    //         source: tweetObject.source,
+    //         text: tweetObject.text,
+    //         user_image: tweetObject.user.profile_image_url,
+    //         user_screen_name: tweetObject.user.screen_name
+    //       }))
+    //     })
+    //   })
+    //   .catch((err) => res.status(400).json({
+    //     error: 1,
+    //     message: err.message
+    //   }))
   },
   friend_timeline: function (req, res, next) {
     var token = req.headers.authorization;

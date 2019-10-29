@@ -182,12 +182,137 @@ var analyticsSchema = new Schema({
   }
 })
 
-var tweetsSchema = new Schema({
+var analyticsSchema = new Schema({
+  id: {
+    type: Number,
+    require: true,
+  },
+  id_str: {
+    type: String,
+    require: true,
+  },
+  user_searcher: {
+    type: String
+  },
+  date_of_search: {
+    type: Date,
+    default: Date.now
+  },
+  type: {
+    type: String
+  },
+  name: {
+    type: String
+  },
+  screen_name: {
+    type: String
+  },
+  location: {
+    type: String
+  },
+  description: {
+    type: String
+  },
+  url: {
+    type: String
+  },
+  followers_count: {
+    type: Number,
+    require: true,
+  },
+  friends_count: {
+    type: Number,
+    require: true,
+  },
+  listed_count: {
+    type: Number,
+    require: true,
+  },
+  favourites_count: {
+    type: Number,
+    require: true,
+  },
+  statuses_count: {
+    type: Number
+  },
+  profile_background_image_url: {
+    type: String
+  },
+  profile_image_url: {
+    type: String
+  },
+  tweets: {
+    type: Array
+  }
+})
+
+var analitycsInfoSchema = new Schema({
   id_of_analityc: {
     type: String,
     require: true
   },
   state: {
+    type: String,
+    require: true
+  },
+  repliesTotal: {
+    type: Number
+  },
+  mediasTotal: {
+    type: Number
+  },
+  urlsTotal: {
+    type: Number
+  },
+  userMentionsTotal: {
+    type: Number
+  },
+  userMentions: {
+    type: Array
+  },
+  hashtags: {
+    type: Array
+  },
+  hashtagsTotal: {
+    type: Number
+  },
+  favoritesTotal: {
+    type: Number
+  },
+  retweetsTotal: {
+    type: Number
+  },
+  dateInit: {
+    type: Date
+  },
+  dateEnd: {
+    type: Date
+  },
+  ownPosts: {
+    type: Number
+  },
+  sharePosts: {
+    type: Number
+  },
+  postsInDay: {
+    type: Array
+  },
+  postsInMonth: {
+    type: Array
+  },
+  userMentionsGrouped: {
+    type: Array
+  },
+  hashtagsGrouped: {
+    type: Array
+  },
+  replies: {
+    type: Array
+  }
+})
+
+var tweetsSchema = new Schema({
+  id_of_analityc: {
     type: String,
     require: true
   },
@@ -201,3 +326,4 @@ var tweetsSchema = new Schema({
 exports.User = mongoose.model('User', userSchema);
 exports.Analytics = mongoose.model('Analytics', analyticsSchema);
 exports.Tweets = mongoose.model('Tweets', tweetsSchema);
+exports.AnalitycsInfo = mongoose.model('AnalitycsInfo', analitycsInfoSchema);
