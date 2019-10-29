@@ -335,36 +335,38 @@ module.exports = {
         error: 1
       }))
   },
-  getSavedTweet: function (req, res, next) {
+  getSavedAnalitycInfo: function (req, res, next) {
     analitycsInfo.getAnalitycInfoByIdOfAnalityco(req.params.idSearch)
       .then((analitycInfo) => res.status(200).json(analitycInfo))
       .catch((err) => res.status(400).json({
         error: 1,
         message: err.message
       }))
-    // tweets.getTweetByIdOfAnalityc(req.params.idSearch)
-    //   .then((tweet) => {   
-    //     res.status(200).json({
-    //       state: tweet.state,
-    //       tweets: tweet.tweets.map((tweetObject) => ({
-    //         created_at: tweetObject.created_at,
-    //         entities: tweetObject.entities,
-    //         favorite_count:tweetObject.favorite_count,
-    //         id: tweetObject.id,
-    //         id_str: tweetObject.id_str,
-    //         replies: tweetObject.replies,
-    //         retweet_count: tweetObject.retweet_count,
-    //         source: tweetObject.source,
-    //         text: tweetObject.text,
-    //         user_image: tweetObject.user.profile_image_url,
-    //         user_screen_name: tweetObject.user.screen_name
-    //       }))
-    //     })
-    //   })
-    //   .catch((err) => res.status(400).json({
-    //     error: 1,
-    //     message: err.message
-    //   }))
+  },
+  getSavedTweet: function (req, res, next) {
+    tweets.getTweetByIdOfAnalityc(req.params.idSearch)
+      .then((tweet) => {   
+        res.status(200).json({
+          state: tweet.state,
+          tweets: tweet.tweets.map((tweetObject) => ({
+            created_at: tweetObject.created_at,
+            entities: tweetObject.entities,
+            favorite_count:tweetObject.favorite_count,
+            id: tweetObject.id,
+            id_str: tweetObject.id_str,
+            replies: tweetObject.replies,
+            retweet_count: tweetObject.retweet_count,
+            source: tweetObject.source,
+            text: tweetObject.text,
+            // user_image: tweetObject.user.profile_image_url,
+            // user_screen_name: tweetObject.user.screen_name
+          }))
+        })
+      })
+      .catch((err) => res.status(400).json({
+        error: 1,
+        message: err.message
+      }))
   },
   friend_timeline: function (req, res, next) {
     var token = req.headers.authorization;
