@@ -33,13 +33,18 @@ async function getStatuses(searchParameter, idOfAnalityc, accessToken, accessTok
     id_of_analityc: idOfAnalityc,
     state: 'init'
   }
+  
+  let twww = await tweets.getTweetByScreenName(searchParameter)
 
+  console.log(twww.length);
   
-  
+
   let savedAnlitycObject = await analitycsInfo.add(analitycsObject);
-  
-  analitycsInfo.updateStatusOfAnalisys(savedAnlitycObject._id, { state: 'Getting Statuses'})
-  .catch((err) => console.log(err))
+
+  analitycsInfo.updateStatusOfAnalisys(savedAnlitycObject._id, {
+      state: 'Getting Statuses'
+    })
+    .catch((err) => console.log(err))
 
   do {
     console.log(`Getting statuses -> ${ statuses.length }`);
@@ -47,7 +52,7 @@ async function getStatuses(searchParameter, idOfAnalityc, accessToken, accessTok
     result = (await getStat(searchParameter, accessToken, accessTokenSecret, maxId));
 
     console.log(result.length);
-    
+
 
     statuses = [...statuses, ...result]
 
@@ -58,7 +63,7 @@ async function getStatuses(searchParameter, idOfAnalityc, accessToken, accessTok
 
   const ownPosts = statuses.filter(el => !el.retweeted_status);
   const sharePosts = statuses.filter(el => !!el.retweeted_status);
-  const analitycsORM =  ownPosts.reduce((acc, curr) => ({
+  const analitycsORM = ownPosts.reduce((acc, curr) => ({
     ...acc,
     hashtagsTotal: acc.hashtagsTotal + curr.entities.hashtags.length,
     hashtags: [...acc.hashtags, ...curr.entities.hashtags.map(el => el.text)],
@@ -78,7 +83,7 @@ async function getStatuses(searchParameter, idOfAnalityc, accessToken, accessTok
     favoritesTotal: 0,
     retweetsTotal: 0,
     dateInit: ownPosts.length > 0 && ownPosts[ownPosts.length - 1].created_at,
-    dateEnd: ownPosts.length > 0 &&  ownPosts[0].created_at,
+    dateEnd: ownPosts.length > 0 && ownPosts[0].created_at,
     ownPosts: ownPosts.length,
     sharePosts: sharePosts.length,
     postsInDay: getTweetsPerTime(ownPosts, 'DAYS'),
@@ -89,13 +94,15 @@ async function getStatuses(searchParameter, idOfAnalityc, accessToken, accessTok
   analitycsORM.hashtagsGrouped = analitycsORM.hashtags.reduce(groupCount2, []);
 
   // console.log(analitycs);
-  
+
   if (ownPosts.length > 0) {
     let lastId = null,
       iterator = 0;
 
-      analitycsInfo.updateStatusOfAnalisys(savedAnlitycObject._id, { state: 'Getting Replays'})
-  .catch((err) => console.log(err))
+    analitycsInfo.updateStatusOfAnalisys(savedAnlitycObject._id, {
+        state: 'Getting Replays'
+      })
+      .catch((err) => console.log(err))
 
     const lastDaysStatuses = ownPosts.filter((stat) => moment(new Date(stat.created_at)) >= dateSevenDays);
     let tweetIds = ownPosts.map((stat) => stat.id.toString());
@@ -110,7 +117,7 @@ async function getStatuses(searchParameter, idOfAnalityc, accessToken, accessTok
       try {
         partialReplays = await getReplys(searchParameter, accessToken, accessTokenSecret, statusResult.id, lastId);
       } catch (err) {
-        console.error(err);        
+        console.error(err);
       };
 
       replaysForTweet = partialReplays.reduce((acc, partialReplay) => {
@@ -124,7 +131,7 @@ async function getStatuses(searchParameter, idOfAnalityc, accessToken, accessTok
           } else {
             partialNewAcc = getSemtimentData(partialReplay.text)
           }
-          
+
           newAcc = {
             ...acc,
             [partialReplay.in_reply_to_status_id]: partialNewAcc
@@ -139,13 +146,16 @@ async function getStatuses(searchParameter, idOfAnalityc, accessToken, accessTok
       iterator++;
     }
   }
-  
-  analitycsORM.replies = Object.entries(replaysForTweet).map(el => ({ id: el[0], ...el[1]}));
+
+  analitycsORM.replies = Object.entries(replaysForTweet).map(el => ({
+    id: el[0],
+    ...el[1]
+  }));
   analitycsORM.state = 'Done';
 
 
   analitycsInfo.updateStatusOfAnalisys(savedAnlitycObject._id, analitycsORM)
-  .catch((err) => console.log(err))
+    .catch((err) => console.log(err))
 
   tweets.add({
     tweets: ownPosts.map(post => ({
@@ -157,36 +167,44 @@ async function getStatuses(searchParameter, idOfAnalityc, accessToken, accessTok
       retweet_count: post.retweet_count,
       favorite_count: post.favorite_count
     })),
-    id_of_analityc: idOfAnalityc
+    id_of_analityc: idOfAnalityc,
+    screen_name: searchParameter
   })
 }
 
 function groupCount2(acc, curr) {
-  return !acc.find((el) => el.value === curr) ? [...acc, { value: curr, count: 1 }]
-  : acc.map((el) => el.value === curr ? { ...el, count: el.count + 1 } : el);
+  return !acc.find((el) => el.value === curr) ? [...acc, {
+      value: curr,
+      count: 1
+    }] :
+    acc.map((el) => el.value === curr ? {
+      ...el,
+      count: el.count + 1
+    } : el);
 }
 
 function getTweetsPerTime(tweets, tweetsTimeChart) {
   return tweets.reduce((acc, curr) => {
-      const keyName = moment(new Date(curr.created_at)).format(tweetsTimeChart === 'DAYS' ? 'DD-MM-YY' : 'MM-YY');
-      
-      return acc.map((el) => el.name === keyName ? { 
-        ...el,
-        onlyText: !curr.entities.media && curr.entities.urls.length === 0 ? el.onlyText + 1 : el.onlyText,
-        textAndUrls: !curr.entities.media && curr.entities.urls.length > 0 ? el.textAndUrls + 1 : el.textAndUrls,
-        textAndMedia: curr.entities.media && curr.entities.urls.length === 0 ? el.textAndMedia + 1 : el.textAndMedia,
-        textUrlsAndMedia: curr.entities.media && curr.entities.urls.length > 0 ? el.textUrlsAndMedia + 1 : el.textUrlsAndMedia,
-        tweets: el.tweets + 1 } : el)
-    }, getArrayOfDatesBetween(tweets[tweets.length - 1].created_at, tweets[0].created_at, tweetsTimeChart))
+    const keyName = moment(new Date(curr.created_at)).format(tweetsTimeChart === 'DAYS' ? 'DD-MM-YY' : 'MM-YY');
+
+    return acc.map((el) => el.name === keyName ? {
+      ...el,
+      onlyText: !curr.entities.media && curr.entities.urls.length === 0 ? el.onlyText + 1 : el.onlyText,
+      textAndUrls: !curr.entities.media && curr.entities.urls.length > 0 ? el.textAndUrls + 1 : el.textAndUrls,
+      textAndMedia: curr.entities.media && curr.entities.urls.length === 0 ? el.textAndMedia + 1 : el.textAndMedia,
+      textUrlsAndMedia: curr.entities.media && curr.entities.urls.length > 0 ? el.textUrlsAndMedia + 1 : el.textUrlsAndMedia,
+      tweets: el.tweets + 1
+    } : el)
+  }, getArrayOfDatesBetween(tweets[tweets.length - 1].created_at, tweets[0].created_at, tweetsTimeChart))
 }
 
 function getArrayOfDatesBetween(startDate, endDate, tweetsTimeChart) {
   let dates = [];
-  
+
   let currDate = moment(new Date(startDate)).startOf(tweetsTimeChart === 'DAYS' ? 'day' : 'month');
   let lastDate = moment(new Date(endDate)).startOf(tweetsTimeChart === 'DAYS' ? 'day' : 'month');
 
-  while(currDate.add(1, tweetsTimeChart === 'DAYS' ? 'days' : 'months').diff(lastDate) <= 0) {
+  while (currDate.add(1, tweetsTimeChart === 'DAYS' ? 'days' : 'months').diff(lastDate) <= 0) {
     dates.push({
       name: currDate.format(tweetsTimeChart === 'DAYS' ? 'DD-MM-YY' : 'MM-YY'),
       tweets: 0,
@@ -196,27 +214,26 @@ function getArrayOfDatesBetween(startDate, endDate, tweetsTimeChart) {
       textUrlsAndMedia: 0
     });
   }
-  
+
   return dates.reverse()
 }
 
 function getSemtimentData(text, partial) {
   const sentimentScore = sentiment(text, 'es').score;
-  let sentimentObject = partial ? 
-  {
-    replies: partial.replies + 1,
-    score: sentimentScore + partial.score,
-    positive: sentimentScore > 0 ? partial.positive + 1 : partial.positive,
-    negative: sentimentScore < 0 ? partial.negative + 1 : partial.negative,
-    neutral: sentimentScore === 0 ? partial.neutral + 1 : partial.neutral
-  }
-  : {
-    replies: 1,
-    score: sentimentScore,
-    positive: sentimentScore > 0 ?  1 : 0,
-    negative: sentimentScore < 0 ?  1 : 0,
-    neutral: sentimentScore === 0 ?  1 : 0
-  }
+  let sentimentObject = partial ? {
+      replies: partial.replies + 1,
+      score: sentimentScore + partial.score,
+      positive: sentimentScore > 0 ? partial.positive + 1 : partial.positive,
+      negative: sentimentScore < 0 ? partial.negative + 1 : partial.negative,
+      neutral: sentimentScore === 0 ? partial.neutral + 1 : partial.neutral
+    } :
+    {
+      replies: 1,
+      score: sentimentScore,
+      positive: sentimentScore > 0 ? 1 : 0,
+      negative: sentimentScore < 0 ? 1 : 0,
+      neutral: sentimentScore === 0 ? 1 : 0
+    }
   return sentimentObject;
 }
 
@@ -345,13 +362,13 @@ module.exports = {
   },
   getSavedTweet: function (req, res, next) {
     tweets.getTweetByIdOfAnalityc(req.params.idSearch)
-      .then((tweet) => {   
+      .then((tweet) => {
         res.status(200).json({
           state: tweet.state,
           tweets: tweet.tweets.map((tweetObject) => ({
             created_at: tweetObject.created_at,
             entities: tweetObject.entities,
-            favorite_count:tweetObject.favorite_count,
+            favorite_count: tweetObject.favorite_count,
             id: tweetObject.id,
             id_str: tweetObject.id_str,
             replies: tweetObject.replies,
@@ -362,6 +379,52 @@ module.exports = {
             // user_screen_name: tweetObject.user.screen_name
           }))
         })
+      })
+      .catch((err) => res.status(400).json({
+        error: 1,
+        message: err.message
+      }))
+  },
+  getTweetsByMention: function (req, res, next) {
+    tweets.getTweetByIdOfAnalityc(req.params.idSearch)
+      .then((tweet) => {
+        res.status(200).json(
+          tweet.tweets.filter((el) =>
+            el.entities.user_mentions.some(obj =>
+              obj.screen_name === req.params.mention)
+          ).map((tweetObject) => ({
+            created_at: tweetObject.created_at,
+            favorite_count: tweetObject.favorite_count,
+            id: tweetObject.id,
+            id_str: tweetObject.id_str,
+            retweet_count: tweetObject.retweet_count,
+            source: tweetObject.source,
+            text: tweetObject.text,
+          }))
+        )
+      })
+      .catch((err) => res.status(400).json({
+        error: 1,
+        message: err.message
+      }))
+  },
+  getTweetsByHashtag: function (req, res, next) {
+    tweets.getTweetByIdOfAnalityc(req.params.idSearch)
+      .then((tweet) => {
+        res.status(200).json(
+          tweet.tweets.filter((el) =>
+            el.entities.hashtags.some(obj =>
+              obj.text === req.params.hashtag)
+          ).map((tweetObject) => ({
+            created_at: tweetObject.created_at,
+            favorite_count: tweetObject.favorite_count,
+            id: tweetObject.id,
+            id_str: tweetObject.id_str,
+            retweet_count: tweetObject.retweet_count,
+            source: tweetObject.source,
+            text: tweetObject.text,
+          }))
+        )
       })
       .catch((err) => res.status(400).json({
         error: 1,
@@ -408,7 +471,7 @@ module.exports = {
         })
         .then((response) => {
           getStatuses(req.params.search, response._id)
-          .catch((e) => console.log('error => ', e))
+            .catch((e) => console.log('error => ', e))
           return res.status(200).json(response)
         })
         .catch((err) => console.log(err))

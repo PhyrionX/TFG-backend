@@ -103,6 +103,8 @@ app.get("/api/twitter/saved_tweet/:idSearch", middleware.ensureAuthenticated, tw
 app.get("/api/twitter/saved_analityc_info/:idSearch", middleware.ensureAuthenticated, twitterController.getSavedAnalitycInfo);
 app.get("/api/twitter/testing/:search", middleware.ensureAuthenticated, twitterController.testing);
 app.get("/api/twitter/friend_timeline/:search", middleware.ensureAuthenticated, twitterController.friend_timeline);
+app.get("/api/twitter/getTweetsByMention/:idSearch/:mention", middleware.ensureAuthenticated, twitterController.getTweetsByMention);
+app.get("/api/twitter/getTweetsByHashtag/:idSearch/:hashtag", middleware.ensureAuthenticated, twitterController.getTweetsByHashtag);
 
 app.get("/api/history", middleware.ensureAuthenticated, twitterController.getHistory);
 // app.get("/api/twitter/testing3/:accessToken/:accessTokenSecret", middleware.ensureAuthenticated, twitterController.testing3);

@@ -19,6 +19,14 @@ module.exports = {
       }) 
     })
   },
+  getTweetByScreenName: function(screenName) {
+    return new Promise((resolve, reject) => {
+      Tweets.find({screen_name: screenName}, function(err, tweet) {
+        if (err) reject(err);
+        resolve(tweet);  
+      }) 
+    })
+  },
   getTweetByIdOfAnalityc: function(_id) {
     return new Promise((resolve, reject) => {
       Tweets.findOne({id_of_analityc: _id}, function(err, tweet) {

@@ -316,6 +316,9 @@ var tweetsSchema = new Schema({
     type: String,
     require: true
   },
+  screen_name: {
+    type: String
+  },
   tweets: {
     type: Array,
     default: []
