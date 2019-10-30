@@ -7,6 +7,7 @@ var crypto = require('crypto'),
     analytics = require('../model/analytics'),
     analitycsInfo = require('../model/analitycsInfo'),
     sentiment = require('multilang-sentiment'),
+    strint = require('../utils/strint'),
     tweets = require('../model/tweets');
 var jwt = require('jwt-simple');
 var config = require('../config/config');
@@ -36,10 +37,20 @@ async function getStatuses(searchParameter, idOfAnalityc, accessToken, accessTok
   
   let twww = await tweets.getTweetByScreenName(searchParameter)
 
-  console.log(twww.length);
+  const allTweetsOfScreenName = twww.reduce((acc, curr) => {
+    return [...curr.tweets, ...acc]
+  }, []);
+  
+  
+  // allTweetsOfScreenName.map(el => console.log(el.id))
+  const idSince = allTweetsOfScreenName.length > 0 && allTweetsOfScreenName[0].id;
+
+  console.log(idSince);
   
 
   let savedAnlitycObject = await analitycsInfo.add(analitycsObject);
+  
+  const lastAnalitycsInfo = await analitycsInfo.getAnalitycInfoByName(searchParameter);
 
   analitycsInfo.updateStatusOfAnalisys(savedAnlitycObject._id, {
       state: 'Getting Statuses'
@@ -49,12 +60,17 @@ async function getStatuses(searchParameter, idOfAnalityc, accessToken, accessTok
   do {
     console.log(`Getting statuses -> ${ statuses.length }`);
 
-    result = (await getStat(searchParameter, accessToken, accessTokenSecret, maxId));
+    result = (await getStat(searchParameter, accessToken, accessTokenSecret, maxId, idSince));
+    if (idSince && result.length === 1) {
+      result = [];
+    }
 
     console.log(result.length);
 
-
     statuses = [...statuses, ...result]
+
+    console.log(statuses.length);
+
 
     if (statuses.length > 0) {
       maxId = statuses[statuses.length - 1].id;
@@ -67,27 +83,28 @@ async function getStatuses(searchParameter, idOfAnalityc, accessToken, accessTok
     ...acc,
     hashtagsTotal: acc.hashtagsTotal + curr.entities.hashtags.length,
     hashtags: [...acc.hashtags, ...curr.entities.hashtags.map(el => el.text)],
-    mediasTotal: curr.entities.media ? acc.mediasTotal + curr.entities.media.length : acc.mediasTotal + 0,
+    mediasTotal: curr.entities.media ? acc.mediasTotal + curr.entities.media.length : acc.mediasTotal,
     urlsTotal: acc.urlsTotal + curr.entities.urls.length,
     userMentionsTotal: acc.userMentionsTotal + curr.entities.user_mentions.length,
     userMentions: [...acc.userMentions, ...curr.entities.user_mentions.map(el => el.screen_name)],
     favoritesTotal: acc.favoritesTotal + curr.favorite_count,
     retweetsTotal: acc.retweetsTotal + curr.retweet_count
   }), {
-    mediasTotal: 0,
-    urlsTotal: 0,
-    userMentions: [],
-    userMentionsTotal: 0,
-    hashtags: [],
-    hashtagsTotal: 0,
-    favoritesTotal: 0,
-    retweetsTotal: 0,
-    dateInit: ownPosts.length > 0 && ownPosts[ownPosts.length - 1].created_at,
-    dateEnd: ownPosts.length > 0 && ownPosts[0].created_at,
-    ownPosts: ownPosts.length,
-    sharePosts: sharePosts.length,
-    postsInDay: getTweetsPerTime(ownPosts, 'DAYS'),
-    postsInMonth: getTweetsPerTime(ownPosts, 'MONTHS')
+    mediasTotal: lastAnalitycsInfo ? lastAnalitycsInfo.mediasTotal : 0,
+    urlsTotal: lastAnalitycsInfo ? lastAnalitycsInfo.urlsTotal : 0,
+    userMentions: lastAnalitycsInfo ? lastAnalitycsInfo.userMentions : [],
+    userMentionsTotal: lastAnalitycsInfo ? lastAnalitycsInfo.userMentionsTotal : 0,
+    hashtags: lastAnalitycsInfo ? lastAnalitycsInfo.hashtags : [],
+    hashtagsTotal: lastAnalitycsInfo ? lastAnalitycsInfo.hashtagsTotal : 0,
+    favoritesTotal: lastAnalitycsInfo ? lastAnalitycsInfo.favoritesTotal : 0,
+    retweetsTotal: lastAnalitycsInfo ? lastAnalitycsInfo.retweetsTotal : 0,
+    dateInit: lastAnalitycsInfo ? lastAnalitycsInfo.dateInit : ownPosts.length > 0 ? ownPosts[ownPosts.length - 1].created_at : null,
+    dateEnd: ownPosts.length > 0 ? ownPosts[0].created_at : lastAnalitycsInfo ? lastAnalitycsInfo.dateEnd : null,
+    ownPosts: lastAnalitycsInfo ? lastAnalitycsInfo.ownPosts + ownPosts.length : ownPosts.length,
+    sharePosts: lastAnalitycsInfo ? lastAnalitycsInfo.ownPosts + sharePosts.length : sharePosts.length,
+    postsInDay: ownPosts.length > 0 ? lastAnalitycsInfo ? [...getTweetsPerTime(ownPosts, 'DAYS'), ...lastAnalitycsInfo.postsInDay] : getTweetsPerTime(ownPosts, 'DAYS') : lastAnalitycsInfo ? lastAnalitycsInfo.postsInDay : [],
+    postsInMonth: ownPosts.length > 0 ? lastAnalitycsInfo ? [...getTweetsPerTime(ownPosts, 'MONTHS'), ...lastAnalitycsInfo.postsInMonth] : getTweetsPerTime(ownPosts, 'MONTHS') : lastAnalitycsInfo ? lastAnalitycsInfo.postsInMonth : [],
+    screen_name: searchParameter
   });
 
   analitycsORM.userMentionsGrouped = analitycsORM.userMentions.reduce(groupCount2, []);
@@ -144,33 +161,41 @@ async function getStatuses(searchParameter, idOfAnalityc, accessToken, accessTok
 
       lastId = statusResult.id;
       iterator++;
+
+      tweets.add({
+        tweets: ownPosts.map(post => ({
+          id: post.id,
+          id_str: post.id_str,
+          text: post.text,
+          entities: post.entities,
+          created_at: post.created_at,
+          retweet_count: post.retweet_count,
+          favorite_count: post.favorite_count
+        })),
+        id_of_analityc: idOfAnalityc,
+        screen_name: searchParameter
+      })
     }
-  }
-
-  analitycsORM.replies = Object.entries(replaysForTweet).map(el => ({
-    id: el[0],
-    ...el[1]
-  }));
-  analitycsORM.state = 'Done';
-
-
-  analitycsInfo.updateStatusOfAnalisys(savedAnlitycObject._id, analitycsORM)
-    .catch((err) => console.log(err))
-
-  tweets.add({
-    tweets: ownPosts.map(post => ({
-      id: post.id,
-      id_str: post.id_str,
-      text: post.text,
-      entities: post.entities,
-      created_at: post.created_at,
-      retweet_count: post.retweet_count,
-      favorite_count: post.favorite_count
-    })),
-    id_of_analityc: idOfAnalityc,
-    screen_name: searchParameter
-  })
+    }
+    
+    analitycsORM.replies = [...Object.entries(replaysForTweet).map(el => ({
+      id: el[0],
+      ...el[1]
+    })), ...lastAnalitycsInfo ? lastAnalitycsInfo.replies : []];
+    analitycsORM.state = 'Done';
+  
+  
+    analitycsInfo.updateStatusOfAnalisys(savedAnlitycObject._id, analitycsORM)
+      .catch((err) => console.log(err))
 }
+
+// function mergedSearch(analitycsNew, analitycsGeneral, haveData) { 
+//   console.log(!!analitycsGeneral);
+//   if (analitycsGeneral, !haveData) {
+//     analitycsNew.state = 'Same'
+//   }
+//   return analitycsNew;
+// }
 
 function groupCount2(acc, curr) {
   return !acc.find((el) => el.value === curr) ? [...acc, {
@@ -184,6 +209,8 @@ function groupCount2(acc, curr) {
 }
 
 function getTweetsPerTime(tweets, tweetsTimeChart) {
+  // console.log(tweets, tweets[tweets.length - 1].created_at, tweets[0].created_at, tweetsTimeChart);
+  
   return tweets.reduce((acc, curr) => {
     const keyName = moment(new Date(curr.created_at)).format(tweetsTimeChart === 'DAYS' ? 'DD-MM-YY' : 'MM-YY');
 
@@ -257,15 +284,20 @@ function getReplys(searchParameter, accessToken, accessTokenSecret, sinceId, max
   )
 }
 
-function getStat(searchParameter, accessToken, accessTokenSecret, maxId) {
+function getStat(searchParameter, accessToken, accessTokenSecret, maxId, idSince) {
   let maxIdString = '';
+  let sinceId = '';
+
+  if (idSince) {
+    sinceId = `&since_id=${ idSince }`
+  }
 
   if (maxId != 0) {
     maxIdString = `&max_id=${ maxId }`
   }
 
   return new Promise((resolve, reject) =>
-    oauth.get(`${ twitter.acciones.user_timeline }?screen_name=${ searchParameter }&count=200${ maxIdString }`,
+    oauth.get(`${ twitter.acciones.user_timeline }?screen_name=${ searchParameter }&count=200${ maxIdString }${ sinceId }`,
       accessToken, accessTokenSecret,
       function (err, response) {
         if (err) reject(err)

@@ -283,10 +283,12 @@ var analitycsInfoSchema = new Schema({
     type: Number
   },
   dateInit: {
-    type: Date
+    type: Date,
+    default: Date.now
   },
   dateEnd: {
-    type: Date
+    type: Date,
+    default: Date.now
   },
   ownPosts: {
     type: Number
@@ -308,6 +310,9 @@ var analitycsInfoSchema = new Schema({
   },
   replies: {
     type: Array
+  }, 
+  screen_name: {
+    type: String
   }
 })
 

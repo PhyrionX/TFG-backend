@@ -19,6 +19,14 @@ module.exports = {
       }) 
     })
   },
+  getAnalitycInfoByName: function(name) {
+    return new Promise((resolve, reject) => {
+      AnalitycsInfo.findOne({screen_name: name}, function(err, AnalitycsInfo) {
+        if (err) reject(err);
+        resolve(AnalitycsInfo);  
+      }) 
+    })
+  },
   getAnalitycInfoByIdOfAnalityco: function(_id) {
     return new Promise((resolve, reject) => {
       AnalitycsInfo.findOne({id_of_analityc: _id}, function(err, tweet) {
@@ -53,7 +61,8 @@ module.exports = {
             analitycInfo.postsInMonth = data.postsInMonth,
             analitycInfo.userMentionsGrouped = data.userMentionsGrouped,
             analitycInfo.hashtagsGrouped = data.hashtagsGrouped,
-            analitycInfo.replies = data.replies
+            analitycInfo.replies = data.replies,
+            analitycInfo.screen_name = data.screen_name
           }
  
           analitycInfo.save()

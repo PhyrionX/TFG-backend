@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "adf.ly": "^1.1.0",
+    "amdefine": "^1.0.1",
     "async": "^2.0.0-rc.5",
     "body-parser": "latest",
     "bower": "latest",
