@@ -21,7 +21,7 @@ module.exports = {
   },
   getTweetByScreenName: function(screenName) {
     return new Promise((resolve, reject) => {
-      Tweets.find({screen_name: screenName}, function(err, tweet) {
+      Tweets.findOne({screen_name: screenName}, function(err, tweet) {
         if (err) reject(err);
         resolve(tweet);  
       }) 

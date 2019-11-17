@@ -37,15 +37,21 @@ async function getStatuses(searchParameter, idOfAnalityc, accessToken, accessTok
   
   let twww = await tweets.getTweetByScreenName(searchParameter)
 
-  const allTweetsOfScreenName = twww.reduce((acc, curr) => {
-    return [...curr.tweets, ...acc]
-  }, []);
+  // const allTweetsOfScreenName = twww.reduce((acc, curr) => {
+  //   return [...curr.tweets, ...acc]
+  // }, []);
+
+  console.log(twww && twww.tweets && twww.tweets.length);
+  
+  const allTweetsOfScreenName = twww && twww.tweets ? twww.tweets : [];
+
+  console.log('aaaa_> ', allTweetsOfScreenName);
   
   
   // allTweetsOfScreenName.map(el => console.log(el.id))
   const idSince = allTweetsOfScreenName.length > 0 && allTweetsOfScreenName[0].id;
 
-  console.log(idSince);
+  console.log('idSince -> ', idSince);
   
 
   let savedAnlitycObject = await analitycsInfo.add(analitycsObject);
@@ -162,6 +168,10 @@ async function getStatuses(searchParameter, idOfAnalityc, accessToken, accessTok
       lastId = statusResult.id;
       iterator++;
 
+    }
+
+    console.log('AASASDASDASDASDAS ', ownPosts.length);
+    
       tweets.add({
         tweets: ownPosts.map(post => ({
           id: post.id,
@@ -175,7 +185,6 @@ async function getStatuses(searchParameter, idOfAnalityc, accessToken, accessTok
         id_of_analityc: idOfAnalityc,
         screen_name: searchParameter
       })
-    }
     }
     
     analitycsORM.replies = [...Object.entries(replaysForTweet).map(el => ({
@@ -248,6 +257,7 @@ function getArrayOfDatesBetween(startDate, endDate, tweetsTimeChart) {
 function getSemtimentData(text, partial) {
   const sentimentScore = sentiment(text, 'es').score;
   let sentimentObject = partial ? {
+      text: [ ...partial.text, text ],
       replies: partial.replies + 1,
       score: sentimentScore + partial.score,
       positive: sentimentScore > 0 ? partial.positive + 1 : partial.positive,
@@ -255,6 +265,7 @@ function getSemtimentData(text, partial) {
       neutral: sentimentScore === 0 ? partial.neutral + 1 : partial.neutral
     } :
     {
+      text: [ text ],
       replies: 1,
       score: sentimentScore,
       positive: sentimentScore > 0 ? 1 : 0,
@@ -386,6 +397,27 @@ module.exports = {
   },
   getSavedAnalitycInfo: function (req, res, next) {
     analitycsInfo.getAnalitycInfoByIdOfAnalityco(req.params.idSearch)
+      // .then((analitycInfo) => {
+      //   console.log(analitycInfo.replies.reduce((acc, curr) => {
+      //     const newAcc = acc;
+
+      //     if (newAcc.find(el => el.id === curr.id)) {
+      //       console.log('a');
+            
+      //       newAcc.map((el2) => el2.id === curr.id ? {...el2, value: el2.value + 1} : el2)
+      //     } else {
+      //       newAcc.push({id: curr.id, value: 1})
+      //     }
+
+
+      //     return newAcc;
+      //   }, [])
+      //   .map((el) => console.log(el)).length);
+
+      //   // analitycsInfo.replies.map((el) => console.log(el.id))
+        
+      //   return analitycInfo;
+      // })
       .then((analitycInfo) => res.status(200).json(analitycInfo))
       .catch((err) => res.status(400).json({
         error: 1,
