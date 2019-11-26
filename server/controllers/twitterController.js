@@ -36,7 +36,7 @@ async function getStatuses(searchParameter, idOfAnalityc, accessToken, accessTok
   }
   
   let twww = await tweets.getTweetByScreenName(searchParameter)
-  tweets.removeTweetByScreenName(searchParameter);
+
 
   // const allTweetsOfScreenName = twww.reduce((acc, curr) => {
   //   return [...curr.tweets, ...acc]
@@ -80,6 +80,8 @@ async function getStatuses(searchParameter, idOfAnalityc, accessToken, accessTok
 
 
     if (statuses.length > 0) {
+      console.log(result[0].id === maxId);
+      
       maxId = statuses[statuses.length - 1].id;
     }
   } while (result.length > 1);
@@ -87,12 +89,13 @@ async function getStatuses(searchParameter, idOfAnalityc, accessToken, accessTok
   // statuses = statuses.slice(0, 500);
   const lastStatuseId = statuses.length > 0 ?   statuses[statuses.length - 1].id : -1;
   const firstStatuseIdFromMongo = allTweetsOfScreenName.length > 0 ? allTweetsOfScreenName[0].id : -1;
+  const newTuits = statuses.filter((tuit) => Number(firstStatuseIdFromMongo) < Number(tuit.id));
 
-  console.log("MongoID -> " + statuses.filter((tuit) => Number(firstStatuseIdFromMongo) < Number(tuit.id)).length);
+  console.log("MongoID -> " + newTuits.length);
   
 
   statuses = [...statuses, ...allTweetsOfScreenName.filter((tuit) => Number(lastStatuseId) > Number(tuit.id))];
-  allTweetsOfScreenName
+  // allTweetsOfScreenName
   const ownPosts = statuses.filter(el => !el.retweeted_status);
   
   console.log(allTweetsOfScreenName.length, ownPosts.length);
@@ -108,20 +111,20 @@ async function getStatuses(searchParameter, idOfAnalityc, accessToken, accessTok
     favoritesTotal: acc.favoritesTotal + curr.favorite_count,
     retweetsTotal: acc.retweetsTotal + curr.retweet_count
   }), {
-    mediasTotal: lastAnalitycsInfo ? lastAnalitycsInfo.mediasTotal : 0,
-    urlsTotal: lastAnalitycsInfo ? lastAnalitycsInfo.urlsTotal : 0,
-    userMentions: lastAnalitycsInfo ? lastAnalitycsInfo.userMentions : [],
-    userMentionsTotal: lastAnalitycsInfo ? lastAnalitycsInfo.userMentionsTotal : 0,
-    hashtags: lastAnalitycsInfo ? lastAnalitycsInfo.hashtags : [],
-    hashtagsTotal: lastAnalitycsInfo ? lastAnalitycsInfo.hashtagsTotal : 0,
-    favoritesTotal: lastAnalitycsInfo ? lastAnalitycsInfo.favoritesTotal : 0,
-    retweetsTotal: lastAnalitycsInfo ? lastAnalitycsInfo.retweetsTotal : 0,
-    dateInit: lastAnalitycsInfo ? lastAnalitycsInfo.dateInit : ownPosts.length > 0 ? ownPosts[ownPosts.length - 1].created_at : null,
-    dateEnd: ownPosts.length > 0 ? ownPosts[0].created_at : lastAnalitycsInfo ? lastAnalitycsInfo.dateEnd : null,
-    ownPosts: lastAnalitycsInfo ? lastAnalitycsInfo.ownPosts + ownPosts.length : ownPosts.length,
-    sharePosts: lastAnalitycsInfo ? lastAnalitycsInfo.ownPosts + sharePosts.length : sharePosts.length,
-    postsInDay: ownPosts.length > 0 ? lastAnalitycsInfo ? [...getTweetsPerTime(ownPosts, 'DAYS'), ...lastAnalitycsInfo.postsInDay] : getTweetsPerTime(ownPosts, 'DAYS') : lastAnalitycsInfo ? lastAnalitycsInfo.postsInDay : [],
-    postsInMonth: ownPosts.length > 0 ? lastAnalitycsInfo ? [...getTweetsPerTime(ownPosts, 'MONTHS'), ...lastAnalitycsInfo.postsInMonth] : getTweetsPerTime(ownPosts, 'MONTHS') : lastAnalitycsInfo ? lastAnalitycsInfo.postsInMonth : [],
+    mediasTotal: 0,
+    urlsTotal: 0,
+    userMentions: [],
+    userMentionsTotal: 0,
+    hashtags: [],
+    hashtagsTotal: 0,
+    favoritesTotal: 0,
+    retweetsTotal: 0,
+    dateInit: ownPosts.length > 0 && ownPosts[ownPosts.length - 1].created_at,
+    dateEnd: ownPosts.length > 0 && ownPosts[0].created_at,
+    ownPosts: ownPosts.length,
+    sharePosts: sharePosts.length,
+    postsInDay: getTweetsPerTime(ownPosts, 'DAYS'),
+    postsInMonth: getTweetsPerTime(ownPosts, 'MONTHS'),
     screen_name: searchParameter
   });
 
@@ -139,7 +142,10 @@ async function getStatuses(searchParameter, idOfAnalityc, accessToken, accessTok
       })
       .catch((err) => console.log(err))
 
-    const lastDaysStatuses = ownPosts.filter((stat) => moment(new Date(stat.created_at)) >= dateSevenDays);
+
+
+    const lastDaysStatuses = allTweetsOfScreenName.length === 0 ? ownPosts.filter((stat) => moment(new Date(stat.created_at)) >= dateSevenDays) : 
+        newTuits.filter((stat) => moment(new Date(stat.created_at)) >= dateSevenDays);
     let tweetIds = ownPosts.map((stat) => stat.id.toString());
     console.log(`Statuses ${ownPosts.length } and lastSeven days ${ lastDaysStatuses.length }`);
 
@@ -183,7 +189,8 @@ async function getStatuses(searchParameter, idOfAnalityc, accessToken, accessTok
     }
 
     console.log('AASASDASDASDASDAS ', ownPosts.length);
-    
+    tweets.removeTweetByScreenName(searchParameter);
+
       tweets.add({
         tweets: ownPosts.map(post => ({
           id: post.id,
@@ -238,12 +245,30 @@ function getTweetsPerTime(tweets, tweetsTimeChart) {
     return acc.map((el) => el.name === keyName ? {
       ...el,
       onlyText: !curr.entities.media && curr.entities.urls.length === 0 ? el.onlyText + 1 : el.onlyText,
+      onlyImage: !curr.text && haveImage(curr) ? el.onlyImage + 1 : el.onlyImage,
+      textAndImage: curr.text && haveImage(curr) ? el.textAndImage + 1 : el.textAndImage,
+      textAndImageAndUrl: curr.entities.urls.length > 0 && curr.text && haveImage(curr) ? el.textAndImageAndUrl + 1 : el.textAndImageAndUrl,
+      onlyVideo: !curr.text && haveVideo(curr) ? el.onlyVideo + 1 : el.onlyVideo,
+      textAndVideo: curr.text && haveVideo(curr) ? el.textAndVideo + 1 : el.textAndVideo,
+      textAndVideoAndUrl: curr.entities.urls.length > 0 && curr.text && haveVideo(curr) ? el.textAndVideoAndUrl + 1 : el.textAndVideoAndUrl,
       textAndUrls: !curr.entities.media && curr.entities.urls.length > 0 ? el.textAndUrls + 1 : el.textAndUrls,
       textAndMedia: curr.entities.media && curr.entities.urls.length === 0 ? el.textAndMedia + 1 : el.textAndMedia,
       textUrlsAndMedia: curr.entities.media && curr.entities.urls.length > 0 ? el.textUrlsAndMedia + 1 : el.textUrlsAndMedia,
       tweets: el.tweets + 1
     } : el)
   }, getArrayOfDatesBetween(tweets[tweets.length - 1].created_at, tweets[0].created_at, tweetsTimeChart))
+}
+
+function haveImage(curr) {
+  // console.log(curr.entities.media ? true : false);
+  // console.log(curr.entities.media ? curr.entities.media[0].expanded_url.includes('photo') : false);
+  return curr.entities.media ? curr.entities.media[0].expanded_url.includes('photo') : false;
+}
+
+function haveVideo(curr) {
+  // console.log(curr.entities.media ? true : false);
+  // console.log(curr.entities.media ? curr.entities.media[0].expanded_url.includes('photo') : false);
+  return curr.entities.media ? curr.entities.media[0].expanded_url.includes('video') : false;
 }
 
 function getArrayOfDatesBetween(startDate, endDate, tweetsTimeChart) {
@@ -257,6 +282,12 @@ function getArrayOfDatesBetween(startDate, endDate, tweetsTimeChart) {
       name: currDate.format(tweetsTimeChart === 'DAYS' ? 'DD-MM-YY' : 'MM-YY'),
       tweets: 0,
       onlyText: 0,
+      onlyImage: 0,
+      textAndImage: 0,
+      textAndImageAndUrl: 0,
+      onlyVideo: 0,
+      textAndVideo: 0,
+      textAndVideoAndUrl: 0,
       textAndUrls: 0,
       textAndMedia: 0,
       textUrlsAndMedia: 0
