@@ -36,16 +36,17 @@ async function getStatuses(searchParameter, idOfAnalityc, accessToken, accessTok
   }
   
   let twww = await tweets.getTweetByScreenName(searchParameter)
+  tweets.removeTweetByScreenName(searchParameter);
 
   // const allTweetsOfScreenName = twww.reduce((acc, curr) => {
   //   return [...curr.tweets, ...acc]
   // }, []);
 
-  console.log(twww && twww.tweets && twww.tweets.length);
+  // console.log(twww && twww.tweets && twww.tweets.length);
   
   const allTweetsOfScreenName = twww && twww.tweets ? twww.tweets : [];
 
-  console.log('aaaa_> ', allTweetsOfScreenName);
+  console.log('aaaa_> ', allTweetsOfScreenName.length);
   
   
   // allTweetsOfScreenName.map(el => console.log(el.id))
@@ -66,10 +67,10 @@ async function getStatuses(searchParameter, idOfAnalityc, accessToken, accessTok
   do {
     console.log(`Getting statuses -> ${ statuses.length }`);
 
-    result = (await getStat(searchParameter, accessToken, accessTokenSecret, maxId, idSince));
-    if (idSince && result.length === 1) {
-      result = [];
-    }
+    result = (await getStat(searchParameter, accessToken, accessTokenSecret, maxId /*,idSince*/));
+    // if (idSince && result.length === 1) {
+    //   result = [];
+    // }
 
     console.log(result.length);
 
@@ -83,7 +84,18 @@ async function getStatuses(searchParameter, idOfAnalityc, accessToken, accessTok
     }
   } while (result.length > 1);
 
+  // statuses = statuses.slice(0, 500);
+  const lastStatuseId = statuses.length > 0 ?   statuses[statuses.length - 1].id : -1;
+  const firstStatuseIdFromMongo = allTweetsOfScreenName.length > 0 ? allTweetsOfScreenName[0].id : -1;
+
+  console.log("MongoID -> " + statuses.filter((tuit) => Number(firstStatuseIdFromMongo) < Number(tuit.id)).length);
+  
+
+  statuses = [...statuses, ...allTweetsOfScreenName.filter((tuit) => Number(lastStatuseId) > Number(tuit.id))];
+  allTweetsOfScreenName
   const ownPosts = statuses.filter(el => !el.retweeted_status);
+  
+  console.log(allTweetsOfScreenName.length, ownPosts.length);
   const sharePosts = statuses.filter(el => !!el.retweeted_status);
   const analitycsORM = ownPosts.reduce((acc, curr) => ({
     ...acc,
