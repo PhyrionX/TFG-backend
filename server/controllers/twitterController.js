@@ -254,6 +254,8 @@ function getTweetsPerTime(tweets, tweetsTimeChart) {
       textAndUrls: !curr.entities.media && curr.entities.urls.length > 0 ? el.textAndUrls + 1 : el.textAndUrls,
       textAndMedia: curr.entities.media && curr.entities.urls.length === 0 ? el.textAndMedia + 1 : el.textAndMedia,
       textUrlsAndMedia: curr.entities.media && curr.entities.urls.length > 0 ? el.textUrlsAndMedia + 1 : el.textUrlsAndMedia,
+      favorites: el.favorites + curr.favorite_count,
+      retweets: el.retweets + curr.retweet_count,
       tweets: el.tweets + 1
     } : el)
   }, getArrayOfDatesBetween(tweets[tweets.length - 1].created_at, tweets[0].created_at, tweetsTimeChart))
@@ -290,7 +292,9 @@ function getArrayOfDatesBetween(startDate, endDate, tweetsTimeChart) {
       textAndVideoAndUrl: 0,
       textAndUrls: 0,
       textAndMedia: 0,
-      textUrlsAndMedia: 0
+      textUrlsAndMedia: 0,
+      favorites: 0,
+      retweets: 0
     });
   }
 
