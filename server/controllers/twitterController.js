@@ -34,6 +34,8 @@ async function getStatuses(searchParameter, idOfAnalityc, accessToken, accessTok
     id_of_analityc: idOfAnalityc,
     state: 'init'
   }
+  let savedAnlitycObject = await analitycsInfo.add(analitycsObject);
+
   
   let twww = await tweets.getTweetByScreenName(searchParameter)
 
@@ -55,7 +57,6 @@ async function getStatuses(searchParameter, idOfAnalityc, accessToken, accessTok
   console.log('idSince -> ', idSince);
   
 
-  let savedAnlitycObject = await analitycsInfo.add(analitycsObject);
   
   const lastAnalitycsInfo = await analitycsInfo.getAnalitycInfoByName(searchParameter);
 
@@ -125,7 +126,7 @@ async function getStatuses(searchParameter, idOfAnalityc, accessToken, accessTok
     sharePosts: sharePosts.length,
     postsInDay: getTweetsPerTime(ownPosts, 'DAYS'),
     postsInMonth: getTweetsPerTime(ownPosts, 'MONTHS'),
-    screen_name: searchParameter
+    screen_name: searchParameter,
   });
 
   analitycsORM.userMentionsGrouped = analitycsORM.userMentions.reduce(groupCount2, []);
@@ -187,34 +188,39 @@ async function getStatuses(searchParameter, idOfAnalityc, accessToken, accessTok
       iterator++;
 
     }
-
+    
     console.log('AASASDASDASDASDAS ', ownPosts.length);
     tweets.removeTweetByScreenName(searchParameter);
-
-      tweets.add({
-        tweets: ownPosts.map(post => ({
-          id: post.id,
-          id_str: post.id_str,
-          text: post.text,
-          entities: post.entities,
-          created_at: post.created_at,
-          retweet_count: post.retweet_count,
-          favorite_count: post.favorite_count
-        })),
-        id_of_analityc: idOfAnalityc,
-        screen_name: searchParameter
-      })
-    }
     
-    analitycsORM.replies = [...Object.entries(replaysForTweet).map(el => ({
-      id: el[0],
-      ...el[1]
-    })), ...lastAnalitycsInfo ? lastAnalitycsInfo.replies : []];
-    analitycsORM.state = 'Done';
+    tweets.add({
+      tweets: ownPosts.map(post => ({
+        id: post.id,
+        id_str: post.id_str,
+        text: post.text,
+        entities: post.entities,
+        created_at: post.created_at,
+        retweet_count: post.retweet_count,
+        favorite_count: post.favorite_count
+      })),
+      id_of_analityc: idOfAnalityc,
+      screen_name: searchParameter
+    })
+  }
+  
+  analitycsORM.replies = [...Object.entries(replaysForTweet).map(el => ({
+    id: el[0],
+    ...el[1]
+  })), ...lastAnalitycsInfo ? lastAnalitycsInfo.replies : []];
+  analitycsORM.state = 'Done';
   
   
-    analitycsInfo.updateStatusOfAnalisys(savedAnlitycObject._id, analitycsORM)
-      .catch((err) => console.log(err))
+  analitycsInfo.updateStatusOfAnalisys(savedAnlitycObject._id, analitycsORM)
+  .catch((err) => console.log(err))
+  
+  // analitycsORM.replies.reduce((acc, curr) =>
+  //   acc.find((el) => el.id === curr.id) ? acc.map((el) => el.id === curr.id ? { ...el, count: el.count + 1 } : el) : [...acc, { id: curr.id, count: 1 }], []).map((el) => console.log(el)).length;
+
+
 }
 
 // function mergedSearch(analitycsNew, analitycsGeneral, haveData) { 
