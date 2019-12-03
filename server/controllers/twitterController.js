@@ -81,7 +81,7 @@ async function getStatuses(searchParameter, idOfAnalityc, accessToken, accessTok
 
 
     if (statuses.length > 0) {
-      console.log(result[0].id === maxId);
+      //   console.log(result[0].id === maxId);
       
       maxId = statuses[statuses.length - 1].id;
     }
@@ -126,6 +126,7 @@ async function getStatuses(searchParameter, idOfAnalityc, accessToken, accessTok
     sharePosts: sharePosts.length,
     postsInDay: getTweetsPerTime(ownPosts, 'DAYS'),
     postsInMonth: getTweetsPerTime(ownPosts, 'MONTHS'),
+    totals: getTotalsType(ownPosts),
     screen_name: searchParameter,
   });
 
@@ -240,6 +241,35 @@ function groupCount2(acc, curr) {
       ...el,
       count: el.count + 1
     } : el);
+}
+
+function getTotalsType(posts) {
+  console.log("TOTALS " + posts.length);
+  
+
+  return posts.reduce((acc, curr) => ({
+    onlyText: !curr.entities.media && curr.entities.urls.length === 0 ? acc.onlyText + 1 : acc.onlyText,
+    onlyImage: !curr.text && haveImage(curr) ? acc.onlyImage + 1 : acc.onlyImage,
+    textAndImage: curr.text && haveImage(curr) ? acc.textAndImage + 1 : acc.textAndImage,
+    textAndImageAndUrl: curr.entities.urls.length > 0 && curr.text && haveImage(curr) ? acc.textAndImageAndUrl + 1 : acc.textAndImageAndUrl,
+    onlyVideo: !curr.text && haveVideo(curr) ? acc.onlyVideo + 1 : acc.onlyVideo,
+    textAndVideo: curr.text && haveVideo(curr) ? acc.textAndVideo + 1 : acc.textAndVideo,
+    textAndVideoAndUrl: curr.entities.urls.length > 0 && curr.text && haveVideo(curr) ? acc.textAndVideoAndUrl + 1 : acc.textAndVideoAndUrl,
+    textAndUrls: !curr.entities.media && curr.entities.urls.length > 0 ? acc.textAndUrls + 1 : acc.textAndUrls,
+    textAndMedia: curr.entities.media && curr.entities.urls.length === 0 ? acc.textAndMedia + 1 : acc.textAndMedia,
+    textUrlsAndMedia: curr.entities.media && curr.entities.urls.length > 0 ? acc.textUrlsAndMedia + 1 : acc.textUrlsAndMedia
+  }), {
+    onlyText: 0,
+    onlyImage: 0,
+    textAndImage: 0,
+    textAndImageAndUrl: 0,
+    onlyVideo: 0,
+    textAndVideo: 0,
+    textAndVideoAndUrl: 0,
+    textAndUrls: 0,
+    textAndMedia: 0,
+    textUrlsAndMedia: 0
+  })
 }
 
 function getTweetsPerTime(tweets, tweetsTimeChart) {

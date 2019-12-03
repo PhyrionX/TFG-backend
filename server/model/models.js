@@ -313,6 +313,9 @@ var analitycsInfoSchema = new Schema({
   }, 
   screen_name: {
     type: String
+  },
+  totals: {
+    type: Object
   }
 })
 

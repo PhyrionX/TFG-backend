@@ -62,7 +62,8 @@ module.exports = {
             analitycInfo.userMentionsGrouped = data.userMentionsGrouped,
             analitycInfo.hashtagsGrouped = data.hashtagsGrouped,
             analitycInfo.replies = data.replies,
-            analitycInfo.screen_name = data.screen_name
+            analitycInfo.screen_name = data.screen_name,
+            analitycInfo.totals = data.totals
           }
  
           analitycInfo.save()
