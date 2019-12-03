@@ -140,7 +140,7 @@ async function getStatuses(searchParameter, idOfAnalityc, accessToken, accessTok
       iterator = 0;
 
     analitycsInfo.updateStatusOfAnalisys(savedAnlitycObject._id, {
-        state: 'Getting Replays'
+        state: 'Getting Replies'
       })
       .catch((err) => console.log(err))
 
