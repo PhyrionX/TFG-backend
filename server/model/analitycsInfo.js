@@ -21,9 +21,9 @@ module.exports = {
   },
   getAnalitycInfoByName: function(name) {
     return new Promise((resolve, reject) => {
-      AnalitycsInfo.findOne({screen_name: name}, function(err, AnalitycsInfo) {
-        if (err) reject(err);
-        resolve(AnalitycsInfo);  
+      AnalitycsInfo.findOne({screen_name: name}, null, {sort: {_id: -1 }}, function(err, ana) {
+        if (err) reject(err);        
+        resolve(ana);  
       }) 
     })
   },

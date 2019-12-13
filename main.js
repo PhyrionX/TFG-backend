@@ -35,6 +35,8 @@ app.use(compression());
 
 app.use(methodOverride());
 
+app.use(express.static(path.join(__dirname, './public')));
+
 // Configurar cabeceras y cors
 app.use((req, res, next) => {
     res.header('Access-Control-Allow-Origin', '*');
@@ -45,7 +47,7 @@ app.use((req, res, next) => {
 });
 
 
-app.use(express.static(path.join(__dirname, './public')));
+
 app.set('dbUrl', process.env.BBDD || config.db.test);
 // connect mongoose to the mongo dbUrl
 mongoose.connect(app.get('dbUrl'));

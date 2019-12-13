@@ -8,6 +8,7 @@ var crypto = require('crypto'),
     analitycsInfo = require('../model/analitycsInfo'),
     sentiment = require('multilang-sentiment'),
     strint = require('../utils/strint'),
+    fs = require('fs'),
     tweets = require('../model/tweets');
 var jwt = require('jwt-simple');
 var config = require('../config/config');
@@ -23,7 +24,7 @@ var OAuth = require('oauth').OAuth,
     twitter.signature
   );
 
-async function getStatuses(searchParameter, idOfAnalityc, accessToken, accessTokenSecret) {
+async function getStatuses(searchParameter, idOfAnalityc, profileInfo, accessToken, accessTokenSecret) {
   let statuses = [];
   let result = []
   let maxId = 0;
@@ -208,6 +209,8 @@ async function getStatuses(searchParameter, idOfAnalityc, accessToken, accessTok
     })
   }
   
+  // console.log(Object.entries(replaysForTweet).length, lastAnalitycsInfo.replies.length);
+  
   analitycsORM.replies = [...Object.entries(replaysForTweet).map(el => ({
     id: el[0],
     ...el[1]
@@ -217,6 +220,53 @@ async function getStatuses(searchParameter, idOfAnalityc, accessToken, accessTok
   
   analitycsInfo.updateStatusOfAnalisys(savedAnlitycObject._id, analitycsORM)
   .catch((err) => console.log(err))
+
+  const totalReplies = analitycsORM.replies ? analitycsORM.replies.reduce((acc, curr) => acc + curr.replies, 0) : 0;
+
+  const toFile = `
+  ----- Datos del perfil -----
+  Nombre de la cuenta: ${ profileInfo.screen_name }
+  Localización: ${ profileInfo.location }
+  Descripción: ${ profileInfo.description }
+  Seguidores: ${ profileInfo.followers_count }
+  Seguidos: ${ profileInfo.friends_count }
+  Publicaciones totales: ${ profileInfo.statuses_count }
+  ----- Datos de las publicaciones -----
+  Publicaciones propias: ${ analitycsORM.ownPosts }
+  Publicaciones compartidas: ${ analitycsORM.sharePosts }
+  Favoritos total: ${ analitycsORM.favoritesTotal }
+  Retuits total: ${ analitycsORM.retweetsTotal }
+  Comentarios recibidos: ${ totalReplies }
+  Usuarios mencionados totales: ${ analitycsORM.userMentionsTotal }
+  Hashtags totales: ${ analitycsORM.hashtagsTotal }
+  Publicaciones con multimedia: ${ analitycsORM.mediasTotal }
+  Publicaciones con Url: ${ analitycsORM.urlsTotal }
+  ---Totales---
+  Publicaciones solo texto: ${ analitycsORM.totals.onlyText }
+  Publicaciones solo imagen ${ analitycsORM.totals.onlyImage }
+  Publicaciones con texto e imagen: ${ analitycsORM.totals.textAndImage }
+  Publicaciones con texto, imagen y url: ${ analitycsORM.totals.textAndImageAndUrl }
+  Publicaciones solo video: ${ analitycsORM.totals.onlyVideo }
+  Publicaciones con texto y video: ${ analitycsORM.totals.textAndVideo }
+  Publicaciones con texto, video y url: ${ analitycsORM.totals.textAndVideoAndUrl }
+  Publicaciones con texto y url: ${ analitycsORM.totals.textAndUrls }
+  ---Información de comentarios---
+  Total comentarios recibidos: ${ analitycsORM.replies.length }
+  Media de comentarios: ${ totalReplies ? (totalReplies / analitycsORM.replies.length) : 0 }
+  Tuits con comentarios: ${ analitycsORM.replies.length }
+  Comentarios positivos: ${ analitycsORM.replies.reduce((acc, curr) => curr.positive + acc, 0) }
+  Comentarios negativos: ${ analitycsORM.replies.reduce((acc, curr) => curr.negative + acc, 0) }
+  Comentarios neutros: ${ analitycsORM.replies.reduce((acc, curr) => curr.neutral + acc, 0) }
+  Tuits con valoración positiva: ${ analitycsORM.replies.filter(el => el.score > 0).length }
+  Tuits con valoración negativa: ${ analitycsORM.replies.filter(el => el.score < 0).length }
+  Tuits con valoración neutral: ${ analitycsORM.replies.filter(el => el.score === 0).length }`;
+
+  fs.writeFile(`./public/${ idOfAnalityc }.txt`, toFile, function(err) {
+    if(err) {
+        return console.log(err);
+    }
+    console.log("The file was saved!");
+}); 
   
   // analitycsORM.replies.reduce((acc, curr) =>
   //   acc.find((el) => el.id === curr.id) ? acc.map((el) => el.id === curr.id ? { ...el, count: el.count + 1 } : el) : [...acc, { id: curr.id, count: 1 }], []).map((el) => console.log(el)).length;
@@ -617,7 +667,7 @@ module.exports = {
           })
         })
         .then((response) => {
-          getStatuses(req.params.search, response._id)
+          getStatuses(req.params.search, response._id, response)
             .catch((e) => console.log('error => ', e))
           return res.status(200).json(response)
         })
