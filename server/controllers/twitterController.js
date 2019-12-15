@@ -224,42 +224,41 @@ async function getStatuses(searchParameter, idOfAnalityc, profileInfo, accessTok
   const totalReplies = analitycsORM.replies ? analitycsORM.replies.reduce((acc, curr) => acc + curr.replies, 0) : 0;
 
   const toFile = `
-  ----- Datos del perfil -----
-  Nombre de la cuenta: ${ profileInfo.screen_name }
-  Localización: ${ profileInfo.location }
-  Descripción: ${ profileInfo.description }
-  Seguidores: ${ profileInfo.followers_count }
-  Seguidos: ${ profileInfo.friends_count }
-  Publicaciones totales: ${ profileInfo.statuses_count }
-  ----- Datos de las publicaciones -----
-  Publicaciones propias: ${ analitycsORM.ownPosts }
-  Publicaciones compartidas: ${ analitycsORM.sharePosts }
-  Favoritos total: ${ analitycsORM.favoritesTotal }
-  Retuits total: ${ analitycsORM.retweetsTotal }
-  Comentarios recibidos: ${ totalReplies }
-  Usuarios mencionados totales: ${ analitycsORM.userMentionsTotal }
-  Hashtags totales: ${ analitycsORM.hashtagsTotal }
-  Publicaciones con multimedia: ${ analitycsORM.mediasTotal }
-  Publicaciones con Url: ${ analitycsORM.urlsTotal }
-  ---Totales---
-  Publicaciones solo texto: ${ analitycsORM.totals.onlyText }
+  Nombre de la cuenta   ${ profileInfo.screen_name }
+  Localización    ${ profileInfo.location }
+  Descripción   ${ profileInfo.description }
+  Seguidores    ${ profileInfo.followers_count }
+  Seguidos    ${ profileInfo.friends_count }
+  Publicaciones totales   ${ profileInfo.statuses_count }
+
+  Publicaciones propias   ${ analitycsORM.ownPosts }
+  Publicaciones compartidas   ${ analitycsORM.sharePosts }
+  Favoritos total   ${ analitycsORM.favoritesTotal }
+  Retuits total   ${ analitycsORM.retweetsTotal }
+  Comentarios recibidos   ${ totalReplies }
+  Usuarios mencionados totales    ${ analitycsORM.userMentionsTotal }
+  Hashtags totales    ${ analitycsORM.hashtagsTotal }
+  Publicaciones con multimedia    ${ analitycsORM.mediasTotal }
+  Publicaciones con Url   ${ analitycsORM.urlsTotal }
+
+  Publicaciones solo texto    ${ analitycsORM.totals.onlyText }
   Publicaciones solo imagen ${ analitycsORM.totals.onlyImage }
-  Publicaciones con texto e imagen: ${ analitycsORM.totals.textAndImage }
-  Publicaciones con texto, imagen y url: ${ analitycsORM.totals.textAndImageAndUrl }
-  Publicaciones solo video: ${ analitycsORM.totals.onlyVideo }
-  Publicaciones con texto y video: ${ analitycsORM.totals.textAndVideo }
-  Publicaciones con texto, video y url: ${ analitycsORM.totals.textAndVideoAndUrl }
-  Publicaciones con texto y url: ${ analitycsORM.totals.textAndUrls }
-  ---Información de comentarios---
-  Total comentarios recibidos: ${ analitycsORM.replies.length }
-  Media de comentarios: ${ totalReplies ? (totalReplies / analitycsORM.replies.length) : 0 }
-  Tuits con comentarios: ${ analitycsORM.replies.length }
-  Comentarios positivos: ${ analitycsORM.replies.reduce((acc, curr) => curr.positive + acc, 0) }
-  Comentarios negativos: ${ analitycsORM.replies.reduce((acc, curr) => curr.negative + acc, 0) }
-  Comentarios neutros: ${ analitycsORM.replies.reduce((acc, curr) => curr.neutral + acc, 0) }
-  Tuits con valoración positiva: ${ analitycsORM.replies.filter(el => el.score > 0).length }
-  Tuits con valoración negativa: ${ analitycsORM.replies.filter(el => el.score < 0).length }
-  Tuits con valoración neutral: ${ analitycsORM.replies.filter(el => el.score === 0).length }`;
+  Publicaciones con texto e imagen    ${ analitycsORM.totals.textAndImage }
+  Publicaciones con texto, imagen y url   ${ analitycsORM.totals.textAndImageAndUrl }
+  Publicaciones solo video    ${ analitycsORM.totals.onlyVideo }
+  Publicaciones con texto y video   ${ analitycsORM.totals.textAndVideo }
+  Publicaciones con texto, video y url    ${ analitycsORM.totals.textAndVideoAndUrl }
+  Publicaciones con texto y url   ${ analitycsORM.totals.textAndUrls }
+
+  Total comentarios recibidos   ${ analitycsORM.replies.length }
+  Media de comentarios    ${ totalReplies ? (totalReplies / analitycsORM.replies.length) : 0 }
+  Tuits con comentarios   ${ analitycsORM.replies.length }
+  Comentarios positivos   ${ analitycsORM.replies.reduce((acc, curr) => curr.positive + acc, 0) }
+  Comentarios negativos   ${ analitycsORM.replies.reduce((acc, curr) => curr.negative + acc, 0) }
+  Comentarios neutros   ${ analitycsORM.replies.reduce((acc, curr) => curr.neutral + acc, 0) }
+  Tuits con valoración positiva   ${ analitycsORM.replies.filter(el => el.score > 0).length }
+  Tuits con valoración negativa   ${ analitycsORM.replies.filter(el => el.score < 0).length }
+  Tuits con valoración neutral    ${ analitycsORM.replies.filter(el => el.score === 0).length }`;
 
   fs.writeFile(`./public/${ idOfAnalityc }.txt`, toFile, function(err) {
     if(err) {
