@@ -222,7 +222,9 @@ async function getStatuses(searchParameter, idOfAnalityc, profileInfo, accessTok
   .catch((err) => console.log(err))
 
   const totalReplies = analitycsORM.replies ? analitycsORM.replies.reduce((acc, curr) => acc + curr.replies, 0) : 0;
-
+  const mentionMax = analitycsORM.userMentionsGrouped.reduce((acc, curr) => curr.count > acc.count ? { count: curr.count, value: curr.value } : acc , { count: 0, value: 'not'});
+  const hashtagMax = analitycsORM.hashtagsGrouped.reduce((acc, curr) => curr.count > acc.count ? { count: curr.count, value: curr.value } : acc , { count: 0, value: 'not'});
+  
   const toFile = `
   Nombre de la cuenta   ${ profileInfo.screen_name }
   Localización    ${ profileInfo.location }
@@ -231,6 +233,8 @@ async function getStatuses(searchParameter, idOfAnalityc, profileInfo, accessTok
   Seguidos    ${ profileInfo.friends_count }
   Publicaciones totales   ${ profileInfo.statuses_count }
 
+  Fecha inicio análisis   ${ analitycsORM.dateInit }
+  Fecha fin análisis    ${ analitycsORM.dateEnd }
   Publicaciones propias   ${ analitycsORM.ownPosts }
   Publicaciones compartidas   ${ analitycsORM.sharePosts }
   Favoritos total   ${ analitycsORM.favoritesTotal }
@@ -249,6 +253,18 @@ async function getStatuses(searchParameter, idOfAnalityc, profileInfo, accessTok
   Publicaciones con texto y video   ${ analitycsORM.totals.textAndVideo }
   Publicaciones con texto, video y url    ${ analitycsORM.totals.textAndVideoAndUrl }
   Publicaciones con texto y url   ${ analitycsORM.totals.textAndUrls }
+
+  Hasgtag con mayor frecuencia    ${ hashtagMax.value } ${ hashtagMax.count }
+  Mention con mayor frecuencia    ${ mentionMax.value } ${ mentionMax.count }
+
+  Media solo texto    ${ analitycsORM.totals.onlyText ? analitycsORM.postsInDay.length / analitycsORM.totals.onlyText  : 0  }
+  Media solo imagen   ${ analitycsORM.totals.onlyImage ? analitycsORM.postsInDay.length / analitycsORM.totals.onlyImage : 0  }
+  Media con texto e imagen    ${ analitycsORM.totals.textAndImage ? analitycsORM.postsInDay.length / analitycsORM.totals.textAndImage : 0  }
+  Media con texto, imagen y url   ${ analitycsORM.totals.textAndImageAndUrl ? analitycsORM.postsInDay.length / analitycsORM.totals.textAndImageAndUrl : 0  }
+  Media solo video    ${ analitycsORM.totals.onlyVideo ? analitycsORM.postsInDay.length / analitycsORM.totals.onlyVideo : 0  }
+  Media con texto y video   ${ analitycsORM.totals.textAndVideo ? analitycsORM.postsInDay.length / analitycsORM.totals.textAndVideo : 0  }
+  Media con texto, video y url    ${ analitycsORM.totals.textAndVideoAndUrl ? analitycsORM.postsInDay.length / analitycsORM.totals.textAndVideoAndUrl : 0  }
+  Media con texto y url   ${ analitycsORM.totals.textAndUrls ? analitycsORM.postsInDay.length / analitycsORM.totals.textAndUrls : 0  }
 
   Total comentarios recibidos   ${ analitycsORM.replies.length }
   Media de comentarios    ${ totalReplies ? (totalReplies / analitycsORM.replies.length) : 0 }
