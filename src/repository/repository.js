@@ -1,6 +1,7 @@
 const repository = (container) => {
   const { database: db } = container.cradle;
 
+  
   const testDB = () => {
     return new Promise((resolve, reject) => {
       const payload = {
@@ -16,6 +17,11 @@ const repository = (container) => {
         resolve(tested);
       })
     })
+
+  }
+  
+  return {
+    testDB
   }
 }
 

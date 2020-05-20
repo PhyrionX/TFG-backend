@@ -1,10 +1,12 @@
 const express = require('express');
 const bodyparser = require('body-parser');
 const cors = require('cors');
+const authApi = require('../api/auth');
 
 const start = (container) => {
   return new Promise((resolve, reject) => {
     const port = container.resolve('serverSettings');
+    const repo = container.resolve('repo');
     const app = express();
 
     !port && reject(new Error('The server must be started with an available port'));
@@ -20,6 +22,8 @@ const start = (container) => {
       req.container = container.createScope()
       next()
     })
+
+    authApi({repo}, app);
 
     const server = app.listen(port, () => resolve(server));
   });

@@ -12,7 +12,7 @@ mediator.on('di.ready', (container) => {
     .then((repo) => {
       console.log('Connected. Starting Server');
       container.register({ repo : asValue(repo) });
-      return server.start(container);
+      server.start(container);
     })
     .then((app) => {
       console.log(`Server started succesfully in port: ${container.cradle.serverSettings.port}.`);
