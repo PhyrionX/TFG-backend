@@ -21,7 +21,7 @@
     "express-session": "^1.13.0",
     "jwt-simple": "latest",
     "method-override": "latest",
-    "moment": "^2.24.0",
+    "moment": "^2.29.4",
     "mongoose": "latest",
     "multilang-sentiment": "^1.2.0",
     "node-cron": "^1.1.1",
